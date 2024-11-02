@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+package user;
+
+service UserService {
+    rpc CreateNewUser (CreateNewUserRequest) returns (CreateNewUserResponse);
+    rpc FindUserById (FindUserByIdRequest) returns (FindUserByIdResponse);
+    rpc FindUserProfile (FindUserProfileRequest) returns (FindUserProfileResponse);
+    rpc FindUserAvatars (FindUserAvatarsRequest) returns (FindUserAvatarsResponse);
+    rpc FindUserByUsername (FindUserByUsernameRequest) returns (FindUserByUsernameResponse);
+    rpc FindUserByTag (FindUserByTagRequest) returns (FindUserByTagResponse);
+    rpc FindUserByEmail (FindUserByEmailRequest) returns (FindUserByEmailResponse);
+    rpc FindUserByPhoneNumber (FindUserByPhoneNumberRequest) returns (FindUserByPhoneNumberResponse);
+    rpc UpdateUserProfile (UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
+    rpc UpdateUserPassword (UpdateUserPasswordRequest) returns (UpdateUserPasswordResponse);
+    rpc AddAvatarToUser (AddAvatarToUserRequest) returns (AddAvatarToUserResponse);
+    rpc DeleteAvatarUser (DeleteAvatarUserRequest) returns (DeleteAvatarUserResponse);
+}
+
+message CreateNewUserRequest {
+    string phone_number = 2;
+    string email = 3;
+    string password_hash = 5;
+    string username = 6;
+}
+
+message CreateNewUserResponse {
+    string message = 1;
+    int32  status = 2;
+}
+
+message FindUserByIdRequest {
+    int32 user_id = 1;
+}
+
+message FindUserByIdResponse {
+    int32 user_id = 1;
+    string phone_number = 2;
+    string email = 3;
+    string tag = 4;
+    string password_hash = 5;
+    string username = 6;
+}
+
+message FindUserProfileRequest {
+    int32 user_id = 1;
+}
+
+message FindUserProfileResponse {
+    int32 user_id = 1;
+    string description = 2;
+    string created_at = 3;
+    string last_login = 4;
+}
+
+message FindUserAvatarsRequest {
+    int32 user_id = 1;
+}
+
+message Avatar {
+    int32 user_id = 1;
+    string avatar_id = 2;
+    string avatar_url = 3;
+    bool is_active = 4;
+}
+
+message FindUserAvatarsResponse {
+    repeated Avatar avatars = 1;
+}
+
+message FindUserByUsernameRequest {
+    string username = 1;
+}
+
+message FindUserByUsernameResponse {
+    repeated UserArray users = 1;
+}
+
+message UserArray {
+    int32 user_id = 1;
+    string username = 2;
+}
+
+message FindUserByTagRequest {
+    string tag = 1;
+}
+
+message FindUserByTagResponse {
+    int32 user_id = 1;
+    string phone_number = 2;
+    string email = 3;
+    string tag = 4;
+    string password_hash = 5;
+    string username = 6;
+}
+
+message FindUserByEmailRequest {
+    string email = 1;
+}
+
+message FindUserByEmailResponse {
+    int32 user_id = 1;
+    string phone_number = 2;
+    string email = 3;
+    string tag = 4;
+    string password_hash = 5;
+    string username = 6;
+}
+
+message FindUserByPhoneNumberRequest {
+    string phone_number = 1;
+}
+
+message FindUserByPhoneNumberResponse {
+    int32 user_id = 1;
+    string phone_number = 2;
+    string email = 3;
+    string tag = 4;
+    string password_hash = 5;
+    string username = 6;
+}
+
+message UpdateUserProfileRequest {
+    int32 user_id = 1;
+    string description = 2;
+}
+
+message UpdateUserProfileResponse {
+    string message = 1; // "Successful update description"
+}
+
+message UpdateUserPasswordRequest {
+    int32 user_id = 1;
+    string password = 2;
+}
+
+message UpdateUserPasswordResponse {
+    string message = 1; // "Successful update user password"
+}
+
+message AddAvatarToUserRequest {
+    int32 user_id = 1;
+}
+
+message AddAvatarToUserResponse {
+    repeated Avatar avatars = 1;
+}
+
+message DeleteAvatarUserRequest {
+    int32 user_id = 1;
+    string avatar_id = 2;
+}
+
+message DeleteAvatarUserResponse {
+    string message = 1; // "Successful delete avatar"
+}

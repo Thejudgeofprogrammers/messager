@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CryptService } from '../crypt/crypt.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TokenService } from '../token/token.service';
+import { CryptModule } from '../crypt/crypt.module';
+import { TokenModule } from '../token/token.module';
 
 @Module({
     imports: [
@@ -51,8 +51,8 @@ import { TokenService } from '../token/token.service';
                 }),
             },
         ]),
-        CryptService,
-        TokenService,
+        CryptModule,
+        TokenModule,
     ],
     providers: [AuthService],
     exports: [AuthService],

@@ -13,7 +13,7 @@ import {
     FindUserByPhoneNumberRequest,
     FindUserByTagRequest,
     FindUserByIdRequest,
-} from '../../../../protos/proto_gen_files/user';
+} from '../../../protos/proto_gen_files/user';
 
 type ResponseWithoutPassword<T> = Promise<Response<Omit<T, 'passwordHash'>>>;
 

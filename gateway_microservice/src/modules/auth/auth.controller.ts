@@ -6,7 +6,7 @@ import {
     LogoutResponse,
     RegisterRequest,
     RegisterResponse,
-} from '../../../../protos/proto_gen_files/auth';
+} from '../../../protos/proto_gen_files/auth';
 import { AuthService } from './auth.service';
 import { myOptionalCookieOptions } from '../../config/config.cookie';
 import { Response } from 'express';

@@ -12,7 +12,7 @@ import {
     GetUserSessionResponse,
     DeleteUserSessionRequest,
     DeleteUserSessionResponse,
-} from '../../../../protos/proto_gen_files/session_user';
+} from '../../../protos/proto_gen_files/session_user';
 import Redis from 'ioredis';
 import { ConfigService } from '@nestjs/config';
 

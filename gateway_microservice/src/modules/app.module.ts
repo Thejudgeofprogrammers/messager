@@ -7,7 +7,7 @@ import { SessionModule } from './session/session.module';
 @Module({
     imports: [
         ConfigModule.forRoot({
-            envFilePath: '../../../config/auth.env',
+            envFilePath: '../../.env',
             isGlobal: true,
             load: [configuration],
         }),
