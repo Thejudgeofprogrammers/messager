@@ -8,8 +8,6 @@ RUN npm install
 
 COPY . .
 
-RUN apk add --no-cache bash && \
-    (sleep 20 && npm run start:migrate) && \
-    npm run start:generate
+RUN npx prisma generate
 
 CMD ["npm","run","start"]

@@ -6,7 +6,7 @@ import { CacheSessionUserModule } from './cache-session-user/cache-session-user.
 @Module({
     imports: [
         ConfigModule.forRoot({
-            envFilePath: '../../../config/session_user.env',
+            envFilePath: '../../.env',
             isGlobal: true,
             load: [configuration],
         }),

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient, User } from '@prisma/client';
-import { CreateNewUserRequest } from '../../../../protos/proto_gen_files/user';
+import { CreateNewUserRequest } from '../../../protos/proto_gen_files/user';
 
 @Injectable()
 export class PrismaService extends PrismaClient {

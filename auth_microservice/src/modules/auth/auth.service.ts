@@ -19,16 +19,16 @@ import {
     LoginResponse,
     LogoutRequest,
     LogoutResponse,
-} from '../../../../protos/proto_gen_files/auth';
+} from '../../../protos/proto_gen_files/auth';
 
 import {
     UserService as UserInterfase,
     FindUserByEmailResponse,
     FindUserByIdResponse,
     FindUserByPhoneNumberResponse,
-} from '../../../../protos/proto_gen_files/user';
+} from '../../../protos/proto_gen_files/user';
 
-import { SessionUserService as SessionUserInterfase } from '../../../../protos/proto_gen_files/session_user';
+import { SessionUserService as SessionUserInterfase } from '../../../protos/proto_gen_files/session_user';
 
 @Injectable()
 export class AuthService implements AuthInterface {

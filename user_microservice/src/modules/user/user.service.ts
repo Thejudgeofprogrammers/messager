@@ -30,7 +30,7 @@ import {
     FindUserByTagResponse,
     CreateNewUserRequest,
     CreateNewUserResponse,
-} from '../../../../protos/proto_gen_files/user';
+} from '../../../protos/proto_gen_files/user';
 
 // implements UserInterfase
 

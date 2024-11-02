@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
     imports: [
@@ -21,7 +21,7 @@ import { PrismaService } from '../prisma/prisma.service';
                 }),
             },
         ]),
-        PrismaService,
+        PrismaModule,
     ],
     providers: [UserService],
     exports: [UserService],
