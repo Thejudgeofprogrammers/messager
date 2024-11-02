@@ -11,7 +11,7 @@ async function bootstrap() {
         transport: Transport.GRPC,
         options: {
             url: configService.get<string>('grpc_auth_url'),
-            package: configService.get<string>('grpc_auth_package'),
+            package: 'auth',
             protoPath: configService.get<string>('grpc_auth_main_path'),
         },
     };

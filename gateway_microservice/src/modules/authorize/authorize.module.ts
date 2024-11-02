@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
+import { AuthorizeService } from './authorize.service';
+import { AuthorizeController } from './authorize.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -15,7 +15,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
                 useFactory: (configService: ConfigService) => ({
                     transport: Transport.GRPC,
                     options: {
-                        package: configService.get<string>('grpc_auth_package'),
+                        package: 'auth',
                         protoPath: configService.get<string>('grpc_auth_path'),
                         url: configService.get<string>('grpc_auth_url'),
                     },
@@ -23,7 +23,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
             },
         ]),
     ],
-    providers: [AuthService],
-    controllers: [AuthController],
+    providers: [AuthorizeService],
+    controllers: [AuthorizeController],
 })
-export class AuthModule {}
+export class AuthorizeModule {}

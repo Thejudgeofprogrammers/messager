@@ -1,6 +1,6 @@
 import {
     BadRequestException,
-    Injectable,
+    Controller,
     InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -34,7 +34,7 @@ import {
 
 // implements UserInterfase
 
-@Injectable()
+@Controller('UserService')
 export class UserService {
     constructor(private readonly prismaService: PrismaService) {}
 

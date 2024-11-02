@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import configuration from '../config/config.main';
-import { AuthModule } from './auth/auth.module';
+import { AuthorizeModule } from './authorize/authorize.module';
 import { SessionModule } from './session/session.module';
 
 @Module({
@@ -11,7 +11,7 @@ import { SessionModule } from './session/session.module';
             isGlobal: true,
             load: [configuration],
         }),
-        AuthModule,
+        AuthorizeModule,
         SessionModule,
     ],
 })

@@ -1,7 +1,7 @@
 import {
     BadRequestException,
+    Controller,
     Inject,
-    Injectable,
     InternalServerErrorException,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -30,7 +30,7 @@ import {
 
 import { SessionUserService as SessionUserInterfase } from '../../../protos/proto_gen_files/session_user';
 
-@Injectable()
+@Controller('AuthService')
 export class AuthService implements AuthInterface {
     private userService: UserInterfase;
     private sessionUser: SessionUserInterfase;
@@ -57,11 +57,11 @@ export class AuthService implements AuthInterface {
         try {
             if (!data.email && !data.phoneNumber && !data.password)
                 throw new BadRequestException('Data missing');
-
+            console.log('Тут ок');
             const existByEmail: FindUserByEmailResponse = await lastValueFrom(
                 from(this.userService.FindUserByEmail({ email: data.email })),
             );
-
+            console.log('Тут ок');
             if (existByEmail) throw new BadRequestException('User exist');
 
             const existByPhone: FindUserByPhoneNumberResponse =

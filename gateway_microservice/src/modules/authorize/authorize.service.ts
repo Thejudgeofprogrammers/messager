@@ -17,7 +17,7 @@ import { ClientGrpc } from '@nestjs/microservices';
 import { from, lastValueFrom } from 'rxjs';
 
 @Injectable()
-export class AuthService {
+export class AuthorizeService {
     private authMicroService: AuthInterface;
 
     constructor(

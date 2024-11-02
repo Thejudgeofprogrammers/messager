@@ -8,8 +8,8 @@ services:
       - "50051:50051"
     networks:
       - telegramm_network
-    # depends_on:
-    #   # - user_microservice
+    depends_on:
+      - user_microservice
     env_file: ../auth_microservice/.env
 
   user_microservice:
@@ -52,7 +52,7 @@ services:
       - telegramm_network
     depends_on:
       - session_microservice
-      # - user_microservice
+      - user_microservice
       - auth_microservice
     env_file: ../gateway_microservice/.env
 
@@ -70,7 +70,7 @@ services:
       - telegramm_network
     depends_on:
       - session_microservice
-      # - user_microservice
+      - user_microservice
       - auth_microservice
 
   mysql_server:

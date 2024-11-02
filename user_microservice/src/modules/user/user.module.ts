@@ -15,7 +15,7 @@ import { PrismaModule } from '../prisma/prisma.module';
                 useFactory: (configService: ConfigService) => ({
                     transport: Transport.GRPC,
                     options: {
-                        package: configService.get<string>('grpc_user_package'),
+                        package: 'user',
                         protoPath: configService.get<string>('grpc_user_path'),
                     },
                 }),
@@ -23,7 +23,6 @@ import { PrismaModule } from '../prisma/prisma.module';
         ]),
         PrismaModule,
     ],
-    providers: [UserService],
-    exports: [UserService],
+    controllers: [UserService],
 })
 export class UserModule {}

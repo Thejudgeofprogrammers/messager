@@ -16,9 +16,7 @@ import { TokenModule } from '../token/token.module';
                 useFactory: (configService: ConfigService) => ({
                     transport: Transport.GRPC,
                     options: {
-                        package: configService.get<string>(
-                            'grpc_session_package',
-                        ),
+                        package: 'session_user',
                         protoPath:
                             configService.get<string>('grpc_session_path'),
                         url: configService.get<string>('grpc_session_url'),
@@ -32,7 +30,7 @@ import { TokenModule } from '../token/token.module';
                 useFactory: (configService: ConfigService) => ({
                     transport: Transport.GRPC,
                     options: {
-                        package: configService.get<string>('grpc_user_package'),
+                        package: 'user',
                         protoPath: configService.get<string>('grpc_user_path'),
                         url: configService.get<string>('grpc_user_url'),
                     },
@@ -45,7 +43,7 @@ import { TokenModule } from '../token/token.module';
                 useFactory: (configService: ConfigService) => ({
                     transport: Transport.GRPC,
                     options: {
-                        package: configService.get<string>('grpc_auth_package'),
+                        package: 'auth',
                         protoPath: configService.get<string>('grpc_auth_path'),
                     },
                 }),
@@ -54,7 +52,6 @@ import { TokenModule } from '../token/token.module';
         CryptModule,
         TokenModule,
     ],
-    providers: [AuthService],
-    exports: [AuthService],
+    controllers: [AuthService],
 })
 export class AuthModule {}

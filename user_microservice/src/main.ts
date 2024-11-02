@@ -10,7 +10,7 @@ async function bootstrap() {
     const grpcMicroserviceOptions: MicroserviceOptions = {
         transport: Transport.GRPC,
         options: {
-            package: configService.get<string>('grpc_user_package'),
+            package: 'user',
             protoPath: configService.get<string>('grpc_user_path_main'),
             url: configService.get<string>('grpc_user_url'),
         },
