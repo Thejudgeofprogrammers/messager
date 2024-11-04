@@ -1,4 +1,8 @@
-import { Controller, InternalServerErrorException } from '@nestjs/common';
+import {
+    Controller,
+    InternalServerErrorException,
+    NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
@@ -9,39 +13,76 @@ import {
     FindUserByEmailResponse,
     FindUserByPhoneNumberRequest,
     FindUserByPhoneNumberResponse,
-    // DeleteAvatarUserResponse,
-    // DeleteAvatarUserRequest,
-    // AddAvatarToUserResponse,
-    // AddAvatarToUserRequest,
-    // UpdateUserPasswordResponse,
-    // UpdateUserPasswordRequest,
-    // UpdateUserProfileRequest,
-    // FindUserProfileRequest,
-    // FindUserAvatarsRequest,
-    // FindUserProfileResponse,
-    // FindUserAvatarsResponse,
     FindUserByUsernameRequest,
     FindUserByTagRequest,
     FindUserByUsernameResponse,
     FindUserByTagResponse,
     CreateNewUserRequest,
     CreateNewUserResponse,
-} from '../../../protos/proto_gen_files/user';
+} from '../../protos/proto_gen_files/user';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { Counter, Histogram } from 'prom-client';
 
 @Controller('UserService')
 export class UserService implements UserInterfase {
-    constructor(private readonly prismaService: PrismaService) {}
+    constructor(
+        private readonly prismaService: PrismaService,
+
+        @InjectMetric('PROM_METRIC_USER_CREATE_TOTAL')
+        private readonly createUserTotal: Counter<string>,
+        @InjectMetric('PROM_METRIC_USER_CREATE_DURATION')
+        private readonly createUserDuration: Histogram<string>,
+
+        @InjectMetric('PROM_METRIC_USER_FIND_TOTAL')
+        private readonly findUserTotal: Counter<string>,
+        @InjectMetric('PROM_METRIC_USER_FIND_DURATION')
+        private readonly findUserDuration: Histogram<string>,
+    ) {}
 
     @GrpcMethod('UserService', 'CreateNewUser')
     async CreateNewUser(
         request: CreateNewUserRequest,
     ): Promise<CreateNewUserResponse> {
+        const end = this.createUserDuration.startTimer();
         try {
-            await this.prismaService.createUser(request);
-            const data = { message: 'User created', status: 201 };
-            return data;
+            if (
+                !request.username ||
+                !request.email ||
+                !request.phoneNumber ||
+                !request.passwordHash
+            ) {
+                throw new InternalServerErrorException(
+                    'All fields are required',
+                );
+            }
+
+            const existingUserByEmail =
+                await this.prismaService.findUserByEmail(request.email);
+            if (existingUserByEmail) {
+                throw new InternalServerErrorException('Email already in use');
+            }
+
+            const existingUserByPhone =
+                await this.prismaService.findUserByPhone(request.phoneNumber);
+            if (existingUserByPhone) {
+                throw new InternalServerErrorException(
+                    'Phone number already in use',
+                );
+            }
+
+            const newUser = await this.prismaService.createUser(request);
+            if (!newUser) {
+                throw new InternalServerErrorException('User is not created');
+            }
+            this.createUserTotal.inc();
+            return { message: 'User created', status: 201 };
         } catch (e) {
-            throw new InternalServerErrorException('Server have problem');
+            console.error('Error in CreateNewUser:', e);
+            throw new InternalServerErrorException(
+                'Server encountered an issue',
+            );
+        } finally {
+            end();
         }
     }
 
@@ -49,108 +90,189 @@ export class UserService implements UserInterfase {
     async FindUserById(
         request: FindUserByIdRequest,
     ): Promise<FindUserByIdResponse> {
-        const { userId } = request;
-        const existUser = await this.prismaService.findUserById(userId);
-        return {
-            userId: existUser.user_id,
-            phoneNumber: existUser.phone_number,
-            email: existUser.email,
-            tag: existUser.tag,
-            passwordHash: existUser.password_hash,
-            username: existUser.username,
-        };
+        const end = this.findUserDuration.startTimer();
+        try {
+            const { userId } = request;
+            const existUser = await this.prismaService.findUserById(userId);
+            if (!existUser) {
+                return {
+                    userId: 0,
+                    phoneNumber: '',
+                    email: '',
+                    tag: '',
+                    passwordHash: '',
+                    username: '',
+                };
+            }
+            return {
+                userId: existUser.user_id,
+                phoneNumber: existUser.phone_number,
+                email: existUser.email,
+                tag: existUser.tag,
+                passwordHash: existUser.password_hash,
+                username: existUser.username,
+            };
+        } catch (e) {
+            console.error('Error in CreateNewUser:', e);
+            throw new InternalServerErrorException(
+                'Server encountered an issue',
+            );
+        } finally {
+            end();
+        }
     }
 
     @GrpcMethod('UserService', 'FindUserByUsername')
     async FindUserByUsername(
         request: FindUserByUsernameRequest,
     ): Promise<FindUserByUsernameResponse> {
-        const { username } = request;
+        const end = this.findUserDuration.startTimer();
+        try {
+            const { username } = request;
+            const existUsers =
+                await this.prismaService.findUserByUsername(username);
+            this.findUserTotal.inc();
 
-        const existUsers =
-            await this.prismaService.findUserByUsername(username);
-
-        return {
-            users: existUsers.map((user) => ({
-                userId: user.user_id,
-                username: user.username,
-            })),
-        };
+            return {
+                users: existUsers
+                    ? existUsers.map((user) => ({
+                          userId: user.user_id,
+                          username: user.username,
+                      }))
+                    : [],
+            };
+        } catch (e) {
+            console.error('Error in FindUserByUsername:', e);
+            throw new InternalServerErrorException(
+                'Server encountered an issue',
+            );
+        } finally {
+            end();
+        }
     }
 
     @GrpcMethod('UserService', 'FindUserByTag')
     async FindUserByTag(
         request: FindUserByTagRequest,
     ): Promise<FindUserByTagResponse> {
-        const { tag } = request;
-        const existUser = await this.prismaService.findUserByTag(tag);
-        return {
-            userId: existUser.user_id,
-            phoneNumber: existUser.phone_number,
-            email: existUser.email,
-            tag: existUser.tag,
-            passwordHash: existUser.password_hash,
-            username: existUser.username,
-        };
+        const end = this.findUserDuration.startTimer();
+        try {
+            const { tag } = request;
+            const existUser = await this.prismaService.findUserByTag(tag);
+            if (!existUser) {
+                return {
+                    userId: 0,
+                    phoneNumber: '',
+                    email: '',
+                    tag: '',
+                    passwordHash: '',
+                    username: '',
+                };
+            }
+            return {
+                userId: existUser.user_id,
+                phoneNumber: existUser.phone_number,
+                email: existUser.email,
+                tag: existUser.tag,
+                passwordHash: existUser.password_hash,
+                username: existUser.username,
+            };
+        } catch (e) {
+            if (e instanceof NotFoundException) {
+                return {
+                    userId: 0,
+                    phoneNumber: '',
+                    email: '',
+                    tag: '',
+                    passwordHash: '',
+                    username: '',
+                };
+            }
+            console.error('Error in FindUserByEmail:', e);
+            throw new InternalServerErrorException('Server error occurred');
+        } finally {
+            end();
+        }
     }
 
     @GrpcMethod('UserService', 'FindUserByEmail')
     async FindUserByEmail(
         request: FindUserByEmailRequest,
     ): Promise<FindUserByEmailResponse> {
-        const { email } = request;
-        const existUser = await this.prismaService.findUserByEmail(email);
-        return {
-            userId: existUser.user_id,
-            phoneNumber: existUser.phone_number,
-            email: existUser.email,
-            tag: existUser.tag,
-            passwordHash: existUser.password_hash,
-            username: existUser.username,
-        };
+        const end = this.findUserDuration.startTimer();
+        try {
+            const { email } = request;
+            const existUser = await this.prismaService.findUserByEmail(email);
+            this.findUserTotal.inc();
+
+            return {
+                userId: existUser.user_id,
+                phoneNumber: existUser.phone_number,
+                email: existUser.email,
+                tag: existUser.tag,
+                passwordHash: existUser.password_hash,
+                username: existUser.username,
+            };
+        } catch (e) {
+            if (e instanceof NotFoundException) {
+                return {
+                    userId: 0,
+                    phoneNumber: '',
+                    email: '',
+                    tag: '',
+                    passwordHash: '',
+                    username: '',
+                };
+            }
+            console.error('Error in FindUserByEmail:', e);
+            throw new InternalServerErrorException('Server error occurred');
+        } finally {
+            end();
+        }
     }
 
     @GrpcMethod('UserService', 'FindUserByPhoneNumber')
     async FindUserByPhoneNumber(
         request: FindUserByPhoneNumberRequest,
     ): Promise<FindUserByPhoneNumberResponse> {
-        const { phoneNumber } = request;
-        const existUser = await this.prismaService.findUserByPhone(phoneNumber);
-        return {
-            userId: existUser.user_id,
-            phoneNumber: existUser.phone_number,
-            email: existUser.email,
-            tag: existUser.tag,
-            passwordHash: existUser.password_hash,
-            username: existUser.username,
-        };
+        const end = this.findUserDuration.startTimer();
+        try {
+            const { phoneNumber } = request;
+            const existUser =
+                await this.prismaService.findUserByPhone(phoneNumber);
+            if (!existUser) {
+                return {
+                    userId: 0,
+                    phoneNumber: '',
+                    email: '',
+                    tag: '',
+                    passwordHash: '',
+                    username: '',
+                };
+            }
+            return {
+                userId: existUser.user_id,
+                phoneNumber: existUser.phone_number,
+                email: existUser.email,
+                tag: existUser.tag,
+                passwordHash: existUser.password_hash,
+                username: existUser.username,
+            };
+        } catch (e) {
+            if (e instanceof NotFoundException) {
+                return {
+                    userId: 0,
+                    phoneNumber: '',
+                    email: '',
+                    tag: '',
+                    passwordHash: '',
+                    username: '',
+                };
+            }
+            console.error('Error in FindUserByEmail:', e);
+            throw new InternalServerErrorException('Server error occurred');
+        } finally {
+            end();
+        }
     }
-
-    // @GrpcMethod('UserService', 'FindUserProfile')
-    // async FindUserProfile(
-    //     request: FindUserProfileRequest,
-    // ): Promise<FindUserProfileResponse> {}
-
-    // @GrpcMethod('UserService', 'UpdateUserProfile')
-    // async UpdateUserProfile(
-    //     request: UpdateUserProfileRequest,
-    // ): Promise<UpdateUserProfileResponse> {}
-    // @GrpcMethod('UserService', 'UpdateUserPassword')
-    // async UpdateUserPassword(
-    //     request: UpdateUserPasswordRequest,
-    // ): Promise<UpdateUserPasswordResponse> {}
-
-    // @GrpcMethod('UserService', 'FindUserAvatars')
-    // async FindUserAvatars(
-    //     request: FindUserAvatarsRequest,
-    // ): Promise<FindUserAvatarsResponse> {}
-
-    // @GrpcMethod('UserService', 'AddAvatarToUser')
-    // async AddAvatarToUser(
-    //     request: AddAvatarToUserRequest,
-    // ): Promise<AddAvatarToUserResponse> {}
-    // @GrpcMethod('UserService', 'DeleteAvatarUser')
-    // async DeleteAvatarUser(
-    //     request: DeleteAvatarUserRequest,
-    // ): Promise<DeleteAvatarUserResponse> {}
 }

@@ -18,7 +18,7 @@ import {
     FindUserByTagRequest,
     FindUserByUsernameResponse,
     FindUserByTagResponse,
-} from '../../../protos/proto_gen_files/user';
+} from '../../protos/proto_gen_files/user';
 
 import { from, lastValueFrom } from 'rxjs';
 

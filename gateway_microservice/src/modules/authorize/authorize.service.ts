@@ -12,7 +12,7 @@ import {
     LogoutResponse,
     RegisterRequest,
     RegisterResponse,
-} from '../../../protos/proto_gen_files/auth';
+} from '../../protos/proto_gen_files/auth';
 import { ClientGrpc } from '@nestjs/microservices';
 import { from, lastValueFrom } from 'rxjs';
 

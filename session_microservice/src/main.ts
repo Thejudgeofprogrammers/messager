@@ -1,18 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './modules/app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { ConfigService } from '@nestjs/config';
+import { ReflectionService } from '@grpc/reflection';
+// import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
-    const configService = app.get(ConfigService);
+    // const configService = app.get(ConfigService);
 
     const grpcMicroserviceOptions: MicroserviceOptions = {
         transport: Transport.GRPC,
         options: {
             package: 'session_user',
-            protoPath: configService.get<string>('grpc_session_path'),
-            url: configService.get<string>('grpc_session_url'),
+            protoPath: 'src/protos/proto_files/session_user.proto',
+            url: 'session_microservice:50053',
+            onLoadPackageDefinition: (pkg, server) => {
+                new ReflectionService(pkg).addToServer(server);
+            },
         },
     };
 

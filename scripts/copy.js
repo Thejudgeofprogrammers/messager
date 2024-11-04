@@ -2,10 +2,10 @@ const fs = require('fs-extra');
 const path = require('path');
 
 const microservices = [
-    '../session_microservice',
-    '../user_microservice',
-    '../auth_microservice',
-    '../gateway_microservice'
+    '../session_microservice/src',
+    '../user_microservice/src',
+    '../auth_microservice/src',
+    '../gateway_microservice/src'
 ];
 
 const sourceDir = path.join(__dirname, '../protos');

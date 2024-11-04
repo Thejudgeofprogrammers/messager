@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { CryptModule } from './crypt/crypt.module';
 import configuration from '../config/config.main';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { TokenModule } from './token/token.module';
 
 @Module({
     imports: [
@@ -19,6 +20,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
         }),
         AuthModule,
         CryptModule,
+        TokenModule,
     ],
 })
 export class AppModule {}
