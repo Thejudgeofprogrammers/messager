@@ -25,12 +25,11 @@ export class SessionMiddleware implements NestMiddleware {
 
     async use(req: Request, res: Response, next: NextFunction) {
         if (
-            req.path === '/api/auth/login' ||
-            req.path === '/api/auth/register'
+            req.originalUrl === '/api/auth/login' ||
+            req.originalUrl === '/api/auth/register'
         ) {
             return next();
         }
-
         const { userId, jwtToken } = req.cookies;
 
         if (!userId || !jwtToken) {

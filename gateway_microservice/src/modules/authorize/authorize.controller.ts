@@ -7,13 +7,13 @@ import {
     RegisterRequest,
     RegisterResponse,
 } from '../../../protos/proto_gen_files/auth';
-import { AuthService } from './auth.service';
+import { AuthorizeService } from './authorize.service';
 import { myOptionalCookieOptions } from '../../config/config.cookie';
 import { Response } from 'express';
 
 @Controller('auth')
-export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+export class AuthorizeController {
+    constructor(private readonly authService: AuthorizeService) {}
 
     @Post('login')
     async loginUser(
@@ -46,6 +46,7 @@ export class AuthController {
             const data = await this.authService.registerUser(payload);
             return res.json({ message: data.message, status: data.status });
         } catch (e) {
+            console.log(e);
             res.json({ message: 'Server encountered a problem during' }).status(
                 500,
             );

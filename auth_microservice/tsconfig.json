@@ -18,7 +18,7 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
   },
-  "include": ["src/**/*.ts", "protos/**/*.ts"],
+  "include": ["src/**/*.ts", "protos/**/*.ts", "test/app.e2e-spec.ts" ],
   "exclude": ["node_modules", "dist"],
   "paths": {
     "*": ["node_modules/*", "protos/**/*"]

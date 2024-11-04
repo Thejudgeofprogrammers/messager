@@ -8,12 +8,12 @@ services:
       - "50051:50051"
     networks:
       - telegramm_network
-    # depends_on:
-    #   # - user_microservice
+    depends_on:
+      - user_microservice
     env_file: ../auth_microservice/.env
 
   user_microservice:
-    container_name: user_microserice
+    container_name: user_microservice
     build:
       context: ../user_microservice
       dockerfile: Dockerfile
@@ -23,10 +23,8 @@ services:
     networks:
       - telegramm_network
     depends_on:
-      - mysql_server
+      - postgres_server
     env_file: ../user_microservice/.env
-    environment:
-      DATABASE_URL: mysql://admin:admin@mysql_server:3306/telegramm
 
   session_microservice:
     container_name: session_microservice
@@ -52,7 +50,7 @@ services:
       - telegramm_network
     depends_on:
       - session_microservice
-      # - user_microservice
+      - user_microservice
       - auth_microservice
     env_file: ../gateway_microservice/.env
 
@@ -70,18 +68,18 @@ services:
       - telegramm_network
     depends_on:
       - session_microservice
-      # - user_microservice
+      - user_microservice
       - auth_microservice
 
-  mysql_server:
-    image: mysql:latest
-    container_name: mysql_server
+  postgres_server:
+    image: postgres:latest
+    container_name: postgres_server
     env_file:
-      - ../config/mysql.env
+      - ../config/postgre.env
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - ../data/mysql_data:/var/lib/mysql
+      - ../data/postgres_data:/var/lib/postgresql/data
     networks:
       - telegramm_network
 
@@ -95,10 +93,37 @@ services:
     networks:
       - telegramm_network
 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - grafana
+    networks:
+      - telegramm_network
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "4050:3000"
+    networks:
+      - telegramm_network
+    depends_on:
+      - user_microservice
+      - auth_microservice
+      - gateway_microservice
+      - session_microservice
+    env_file:
+      - ../config/grafana.env
+
 networks:
   telegramm_network:
     driver: bridge
 
 volumes:
-  mysql_data:
+  postgres_data:
   redis_data:

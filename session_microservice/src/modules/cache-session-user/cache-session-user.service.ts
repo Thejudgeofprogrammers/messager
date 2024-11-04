@@ -1,6 +1,6 @@
 import {
     BadRequestException,
-    Injectable,
+    Controller,
     InternalServerErrorException,
 } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -16,8 +16,8 @@ import {
 import Redis from 'ioredis';
 import { ConfigService } from '@nestjs/config';
 
-@Injectable()
-export class CacheSessionUserService implements UserSessionInterface {
+@Controller('SessionUserService')
+export class SessionUserService implements UserSessionInterface {
     private redis: Redis;
 
     constructor(private readonly configService: ConfigService) {

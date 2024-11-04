@@ -1,8 +1,9 @@
 import {
     BadRequestException,
+    Controller,
     Inject,
-    Injectable,
     InternalServerErrorException,
+    Logger,
     UnauthorizedException,
 } from '@nestjs/common';
 
@@ -22,58 +23,75 @@ import {
 } from '../../../protos/proto_gen_files/auth';
 
 import {
-    UserService as UserInterfase,
-    FindUserByEmailResponse,
+    UserService as UserInterface,
+    // FindUserByEmailResponse,
     FindUserByIdResponse,
-    FindUserByPhoneNumberResponse,
+    // FindUserByPhoneNumberResponse,
 } from '../../../protos/proto_gen_files/user';
 
 import { SessionUserService as SessionUserInterfase } from '../../../protos/proto_gen_files/session_user';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { Counter, Histogram } from 'prom-client';
 
-@Injectable()
+@Controller('AuthService')
 export class AuthService implements AuthInterface {
-    private userService: UserInterfase;
+    private readonly logger = new Logger(AuthService.name);
+    private userMicroService: UserInterface;
     private sessionUser: SessionUserInterfase;
 
     constructor(
+        @Inject('USER_PACKAGE') private readonly userClient: ClientGrpc,
         private readonly cryptService: CryptService,
         private readonly tokenService: TokenService,
-        @Inject('USER_PACKAGE') private readonly userClient: ClientGrpc,
         @Inject('SESSION_PACKAGE')
         private readonly sessionUserClient: ClientGrpc,
+        @InjectMetric('PROM_METRIC_AUTH_LOGIN_TOTAL')
+        private readonly loginTotal: Counter<string>,
+        @InjectMetric('PROM_METRIC_AUTH_LOGIN_DURATION')
+        private readonly loginDuration: Histogram<string>,
     ) {}
 
     onModuleInit() {
-        this.userService =
-            this.userClient.getService<UserInterfase>('UserService');
-        this.sessionUser =
-            this.sessionUserClient.getService<SessionUserInterfase>(
-                'SessionUserService',
-            );
+        try {
+            this.userMicroService =
+                this.userClient.getService<UserInterface>('UserService');
+            this.sessionUser =
+                this.sessionUserClient.getService<SessionUserInterfase>(
+                    'SessionUserService',
+                );
+        } catch (error) {
+            this.logger.error('Error initializing services', error);
+        }
     }
 
     @GrpcMethod('AuthService', 'Register')
     async Register(data: RegisterRequest): Promise<RegisterResponse> {
+        const end = this.loginDuration.startTimer();
+        this.loginTotal.inc();
         try {
-            if (!data.email && !data.phoneNumber && !data.password)
-                throw new BadRequestException('Data missing');
+            // if (!data.email && !data.phoneNumber && !data.password)
+            //     throw new BadRequestException('Data missing');
 
-            const existByEmail: FindUserByEmailResponse = await lastValueFrom(
-                from(this.userService.FindUserByEmail({ email: data.email })),
-            );
+            // const existByEmail: FindUserByEmailResponse = await lastValueFrom(
+            //     from(
+            //         this.userMicroService.FindUserByEmail({
+            //             email: data.email,
+            //         }),
+            //     ),
+            // );
 
-            if (existByEmail) throw new BadRequestException('User exist');
+            // if (existByEmail) throw new BadRequestException('User exist');
 
-            const existByPhone: FindUserByPhoneNumberResponse =
-                await lastValueFrom(
-                    from(
-                        this.userService.FindUserByPhoneNumber({
-                            phoneNumber: data.phoneNumber,
-                        }),
-                    ),
-                );
+            // const existByPhone: FindUserByPhoneNumberResponse =
+            //     await lastValueFrom(
+            //         from(
+            //             this.userMicroService.FindUserByPhoneNumber({
+            //                 phoneNumber: data.phoneNumber,
+            //             }),
+            //         ),
+            //     );
 
-            if (existByPhone) throw new BadRequestException('User exist');
+            // if (existByPhone) throw new BadRequestException('User exist');
 
             const hashedPassword = await this.cryptService.hashPassword(
                 data.password,
@@ -81,7 +99,7 @@ export class AuthService implements AuthInterface {
 
             const responseUser = await lastValueFrom(
                 from(
-                    this.userService.CreateNewUser({
+                    this.userMicroService.CreateNewUser({
                         username: data.username,
                         email: data.email,
                         passwordHash: hashedPassword,
@@ -95,12 +113,17 @@ export class AuthService implements AuthInterface {
                 status: responseUser.status,
             };
         } catch (e) {
+            this.logger.error('Error during registration', e); // Логируем ошибку
             throw new InternalServerErrorException(`Server have problem ${e}`);
+        } finally {
+            end();
         }
     }
 
     @GrpcMethod('AuthService', 'Login')
     async Login(data: LoginRequest): Promise<LoginResponse> {
+        const end = this.loginDuration.startTimer();
+        this.loginTotal.inc();
         try {
             const { phoneNumber, email, password } = data;
             let existUser: FindUserByIdResponse;
@@ -110,13 +133,15 @@ export class AuthService implements AuthInterface {
             if (!phoneNumber) {
                 existUser = await lastValueFrom(
                     from(
-                        this.userService.FindUserByEmail({ email: data.email }),
+                        this.userMicroService.FindUserByEmail({
+                            email: data.email,
+                        }),
                     ),
                 );
             } else {
                 existUser = await lastValueFrom(
                     from(
-                        this.userService.FindUserByPhoneNumber({
+                        this.userMicroService.FindUserByPhoneNumber({
                             phoneNumber: data.phoneNumber,
                         }),
                     ),
@@ -150,11 +175,15 @@ export class AuthService implements AuthInterface {
             }
         } catch (e) {
             throw new InternalServerErrorException(`Server have problem ${e}`);
+        } finally {
+            end();
         }
     }
 
     @GrpcMethod('AuthService', 'Logout')
     async Logout(data: LogoutRequest): Promise<LogoutResponse> {
+        const end = this.loginDuration.startTimer();
+        this.loginTotal.inc();
         try {
             if (!data.userId) {
                 throw new BadRequestException('user_id is missing');
@@ -167,6 +196,8 @@ export class AuthService implements AuthInterface {
             return { message: 'User logout successfilly', status: 200 };
         } catch (e) {
             throw new InternalServerErrorException('Server have problem');
+        } finally {
+            end();
         }
     }
 }

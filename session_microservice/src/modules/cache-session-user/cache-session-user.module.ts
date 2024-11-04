@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CacheSessionUserService } from './cache-session-user.service';
+import { SessionUserService } from './cache-session-user.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -24,7 +24,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
             },
         ]),
     ],
-    providers: [CacheSessionUserService],
-    exports: [CacheSessionUserService],
+    controllers: [SessionUserService],
 })
-export class CacheSessionUserModule {}
+export class SessionUserModule {}

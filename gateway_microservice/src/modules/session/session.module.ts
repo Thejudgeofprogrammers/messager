@@ -14,9 +14,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
                 useFactory: (configService: ConfigService) => ({
                     transport: Transport.GRPC,
                     options: {
-                        package: configService.get<string>(
-                            'grpc_session_package',
-                        ),
+                        package: 'session_user',
                         protoPath:
                             configService.get<string>('grpc_session_path'),
                         url: configService.get<string>('grpc_session_url'),

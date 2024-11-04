@@ -4,7 +4,10 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CryptModule } from '../crypt/crypt.module';
 import { TokenModule } from '../token/token.module';
-
+import {
+    makeCounterProvider,
+    makeHistogramProvider,
+} from '@willsoto/nestjs-prometheus';
 @Module({
     imports: [
         ConfigModule,
@@ -16,9 +19,7 @@ import { TokenModule } from '../token/token.module';
                 useFactory: (configService: ConfigService) => ({
                     transport: Transport.GRPC,
                     options: {
-                        package: configService.get<string>(
-                            'grpc_session_package',
-                        ),
+                        package: 'session_user',
                         protoPath:
                             configService.get<string>('grpc_session_path'),
                         url: configService.get<string>('grpc_session_url'),
@@ -26,15 +27,15 @@ import { TokenModule } from '../token/token.module';
                 }),
             },
             {
+                name: 'USER_PACKAGE',
                 imports: [ConfigModule],
                 inject: [ConfigService],
-                name: 'USER_PACKAGE',
-                useFactory: (configService: ConfigService) => ({
+                useFactory: () => ({
                     transport: Transport.GRPC,
                     options: {
-                        package: configService.get<string>('grpc_user_package'),
-                        protoPath: configService.get<string>('grpc_user_path'),
-                        url: configService.get<string>('grpc_user_url'),
+                        package: 'user',
+                        protoPath: 'protos/proto_files/user.proto',
+                        url: 'user_microservice:50052',
                     },
                 }),
             },
@@ -45,7 +46,7 @@ import { TokenModule } from '../token/token.module';
                 useFactory: (configService: ConfigService) => ({
                     transport: Transport.GRPC,
                     options: {
-                        package: configService.get<string>('grpc_auth_package'),
+                        package: 'auth',
                         protoPath: configService.get<string>('grpc_auth_path'),
                     },
                 }),
@@ -54,7 +55,16 @@ import { TokenModule } from '../token/token.module';
         CryptModule,
         TokenModule,
     ],
-    providers: [AuthService],
-    exports: [AuthService],
+    controllers: [AuthService],
+    providers: [
+        makeCounterProvider({
+            name: 'PROM_METRIC_AUTH_LOGIN_TOTAL',
+            help: 'Total number of logins',
+        }),
+        makeHistogramProvider({
+            name: 'PROM_METRIC_AUTH_LOGIN_DURATION',
+            help: 'Duration of login requests',
+        }),
+    ],
 })
 export class AuthModule {}
