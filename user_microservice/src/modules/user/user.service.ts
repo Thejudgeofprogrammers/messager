@@ -1,12 +1,8 @@
-import {
-    BadRequestException,
-    Controller,
-    InternalServerErrorException,
-} from '@nestjs/common';
+import { Controller, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
-    // UserService as UserInterfase,
+    UserService as UserInterfase,
     FindUserByIdRequest,
     FindUserByIdResponse,
     FindUserByEmailRequest,
@@ -32,10 +28,8 @@ import {
     CreateNewUserResponse,
 } from '../../../protos/proto_gen_files/user';
 
-// implements UserInterfase
-
 @Controller('UserService')
-export class UserService {
+export class UserService implements UserInterfase {
     constructor(private readonly prismaService: PrismaService) {}
 
     @GrpcMethod('UserService', 'CreateNewUser')
@@ -43,12 +37,6 @@ export class UserService {
         request: CreateNewUserRequest,
     ): Promise<CreateNewUserResponse> {
         try {
-            const existUser = await this.prismaService.findUserByEmail(
-                request.email,
-            );
-            if (existUser) {
-                throw new BadRequestException('User exist');
-            }
             await this.prismaService.createUser(request);
             const data = { message: 'User created', status: 201 };
             return data;
@@ -57,7 +45,7 @@ export class UserService {
         }
     }
 
-    @GrpcMethod('UserService', 'FindUser')
+    @GrpcMethod('UserService', 'FindUserById')
     async FindUserById(
         request: FindUserByIdRequest,
     ): Promise<FindUserByIdResponse> {
@@ -122,7 +110,7 @@ export class UserService {
         };
     }
 
-    @GrpcMethod('UserService', 'FindUserByPhone')
+    @GrpcMethod('UserService', 'FindUserByPhoneNumber')
     async FindUserByPhoneNumber(
         request: FindUserByPhoneNumberRequest,
     ): Promise<FindUserByPhoneNumberResponse> {

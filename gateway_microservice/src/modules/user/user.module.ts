@@ -3,7 +3,7 @@ import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-
+// configService: ConfigService
 @Module({
     imports: [
         ConfigModule,
@@ -12,12 +12,12 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
                 name: 'USER_PACKAGE',
                 imports: [ConfigModule],
                 inject: [ConfigService],
-                useFactory: (configService: ConfigService) => ({
+                useFactory: () => ({
                     transport: Transport.GRPC,
                     options: {
-                        package: configService.get<string>('grpc_user_package'),
-                        protoPath: configService.get<string>('grpc_user_path'),
-                        url: configService.get<string>('grpc_user_url'),
+                        package: 'user',
+                        protoPath: 'protos/proto_files/user.proto',
+                        url: 'user_microservice:50052',
                     },
                 }),
             },

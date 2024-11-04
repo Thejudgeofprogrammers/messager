@@ -19,6 +19,7 @@ import {
     FindUserByUsernameResponse,
     FindUserByTagResponse,
 } from '../../../protos/proto_gen_files/user';
+
 import { from, lastValueFrom } from 'rxjs';
 
 @Injectable()
@@ -49,8 +50,8 @@ export class UserService {
         payload: FindUserByIdRequest,
     ): Promise<Omit<FindUserByIdResponse, 'passwordHash'>> {
         try {
-            if (!payload) {
-                throw new BadRequestException('Data missing');
+            if (!payload || !payload.userId) {
+                throw new BadRequestException('User ID is required');
             }
 
             const userData = await lastValueFrom(
@@ -60,11 +61,19 @@ export class UserService {
                     }),
                 ),
             );
+
+            if (!userData) {
+                throw new InternalServerErrorException('User not found');
+            }
+
             const userWithoutPassword = this.validateUser(userData);
 
             return userWithoutPassword;
         } catch (e) {
-            throw new InternalServerErrorException('Server have problem');
+            console.error('Error in UserService.findUserById:', e);
+            throw new InternalServerErrorException(
+                `Server have problem: ${e.message}`,
+            );
         }
     }
 
@@ -79,7 +88,7 @@ export class UserService {
 
             return userWithoutPassword;
         } catch (e) {
-            throw new InternalServerErrorException('Server have problem');
+            throw new InternalServerErrorException(`Server have problem: ${e}`);
         }
     }
 
@@ -101,7 +110,7 @@ export class UserService {
 
             return userWithoutPassword;
         } catch (e) {
-            throw new InternalServerErrorException('Server have problem');
+            throw new InternalServerErrorException(`Server have problem: ${e}`);
         }
     }
 
@@ -123,7 +132,7 @@ export class UserService {
 
             return userWithoutPassword;
         } catch (e) {
-            throw new InternalServerErrorException('Server have problem');
+            throw new InternalServerErrorException(`Server have problem: ${e}`);
         }
     }
 
@@ -144,7 +153,7 @@ export class UserService {
 
             return userData;
         } catch (e) {
-            throw new InternalServerErrorException('Server have problem');
+            throw new InternalServerErrorException(`Server have problem: ${e}`);
         }
     }
 }

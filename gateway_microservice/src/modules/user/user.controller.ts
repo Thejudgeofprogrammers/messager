@@ -21,123 +21,124 @@ type ResponseWithoutPassword<T> = Promise<Response<Omit<T, 'passwordHash'>>>;
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
-    @Get('')
+    @Get('findById')
     async findUserById(
         @Query() data: FindUserByIdRequest,
         @Res() res: Response,
     ): ResponseWithoutPassword<FindUserByIdResponse> {
         try {
-            if (!data) {
-                res.json({ message: 'Bad request' }).status(400);
+            if (!data || !data.userId) {
+                return res.status(400).json({ message: 'Bad request' });
             }
 
-            const payload = this.userService.findUserById({
+            const payload = await this.userService.findUserById({
                 userId: data.userId,
             });
 
             if (!payload) {
-                res.json({ message: 'Resource not Found' }).status(404);
+                return res.status(404).json({ message: 'Resource not Found' });
             }
 
-            return res.json(payload).status(200);
+            return res.status(200).json(payload);
         } catch (e) {
-            res.json({ message: 'Server error' }).status(500);
+            console.error('Error in findUserById:', e);
+            return res.status(500).json({ message: 'Server error' });
         }
     }
 
-    @Get('')
+    @Get('findByTag')
     async findUserByTag(
         @Query() data: FindUserByTagRequest,
         @Res() res: Response,
     ): ResponseWithoutPassword<FindUserByTagResponse> {
         try {
-            if (!data) {
-                res.json({ message: 'Bad request' }).status(400);
+            if (!data || !data.tag) {
+                return res.status(400).json({ message: 'Bad request' });
             }
 
-            const payload = this.userService.findUserByTag({
+            const payload = await this.userService.findUserByTag({
                 tag: data.tag,
             });
 
             if (!payload) {
-                res.json({ message: 'Resource not Found' }).status(404);
+                return res.status(404).json({ message: 'Resource not Found' });
             }
 
-            return res.json(payload).status(200);
+            return res.status(200).json(payload);
         } catch (e) {
-            res.json({ message: 'Server error' }).status(500);
+            console.error('Error in findUserByTag:', e);
+            return res.status(500).json({ message: 'Server error' });
         }
     }
 
-    @Get('')
+    @Get('findByPhone')
     async findUserByPhone(
         @Query() data: FindUserByPhoneNumberRequest,
         @Res() res: Response,
     ): ResponseWithoutPassword<FindUserByPhoneNumberResponse> {
         try {
-            if (!data) {
-                res.json({ message: 'Bad request' }).status(400);
+            if (!data || !data.phoneNumber) {
+                return res.status(400).json({ message: 'Bad request' });
             }
 
-            const payload = this.userService.findUserByPhone({
+            const payload = await this.userService.findUserByPhone({
                 phoneNumber: data.phoneNumber,
             });
 
             if (!payload) {
-                res.json({ message: 'Resource not Found' }).status(404);
+                return res.status(404).json({ message: 'Resource not Found' });
             }
 
-            return res.json(payload).status(200);
+            return res.status(200).json(payload);
         } catch (e) {
-            res.json({ message: 'Server error' }).status(500);
+            console.error('Error in findUserByPhone:', e);
+            return res.status(500).json({ message: 'Server error' });
         }
     }
 
-    @Get('')
+    @Get('findByEmail')
     async findUserByEmail(
         @Query() data: FindUserByEmailRequest,
         @Res() res: Response,
     ): ResponseWithoutPassword<FindUserByEmailResponse> {
         try {
-            if (!data) {
-                res.json({ message: 'Bad request' }).status(400);
+            if (!data || !data.email) {
+                return res.status(400).json({ message: 'Bad request' });
             }
 
-            const payload = this.userService.findUserByEmail({
+            const payload = await this.userService.findUserByEmail({
                 email: data.email,
             });
 
             if (!payload) {
-                res.json({ message: 'Resource not Found' }).status(404);
+                return res.status(404).json({ message: 'Resource not Found' });
             }
 
-            return res.json(payload).status(200);
+            return res.status(200).json(payload);
         } catch (e) {
-            res.json({ message: 'Server error' }).status(500);
+            console.error('Error in findUserByEmail:', e);
+            return res.status(500).json({ message: 'Server error' });
         }
     }
 
-    @Get('')
+    @Get('findByUsername')
     async findUserName(
         @Query() data: FindUserByUsernameRequest,
         @Res() res: Response,
     ): Promise<Response<FindUserByUsernameResponse>> {
         try {
-            if (!data) {
-                res.json({ message: 'Bad request' }).status(400);
+            if (!data || !data.username) {
+                return res.status(400).json({ message: 'Bad request' });
             }
 
-            const payload = this.userService.findUserByUsername({
+            const payload = await this.userService.findUserByUsername({
                 username: data.username,
             });
 
-            if (!payload) {
-                res.json({ message: 'Resource not Found' }).status(404);
-            }
-
-            return res.json(payload).status(200);
+            return res.status(200).json(payload);
         } catch (e) {
-            res.json({ message: 'Server error' }).status(500);
+            console.error('Error in findUserByUsername:', e);
+            return res.status(500).json({ message: 'Server error' });
         }
     }
 }

@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaModule } from '../prisma/prisma.module';
 
+//configService: ConfigService
 @Module({
     imports: [
         ConfigModule,
@@ -12,11 +13,12 @@ import { PrismaModule } from '../prisma/prisma.module';
                 imports: [ConfigModule],
                 inject: [ConfigService],
                 name: 'USER_PACKAGE',
-                useFactory: (configService: ConfigService) => ({
+                useFactory: () => ({
                     transport: Transport.GRPC,
                     options: {
                         package: 'user',
-                        protoPath: configService.get<string>('grpc_user_path'),
+                        protoPath: '/app/protos/proto_files/user.proto',
+                        url: 'user_microservice:50052',
                     },
                 }),
             },
