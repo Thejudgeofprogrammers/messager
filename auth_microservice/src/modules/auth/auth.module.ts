@@ -7,7 +7,9 @@ import { TokenModule } from '../token/token.module';
 import {
     makeCounterProvider,
     makeHistogramProvider,
+    PrometheusModule,
 } from '@willsoto/nestjs-prometheus';
+
 @Module({
     imports: [
         ConfigModule,
@@ -16,13 +18,12 @@ import {
                 imports: [ConfigModule],
                 inject: [ConfigService],
                 name: 'SESSION_PACKAGE',
-                useFactory: (configService: ConfigService) => ({
+                useFactory: () => ({
                     transport: Transport.GRPC,
                     options: {
                         package: 'session_user',
-                        protoPath:
-                            configService.get<string>('grpc_session_path'),
-                        url: configService.get<string>('grpc_session_url'),
+                        protoPath: 'src/protos/proto_files/session_user.proto',
+                        url: 'session_microservice:50053',
                     },
                 }),
             },
@@ -34,7 +35,7 @@ import {
                     transport: Transport.GRPC,
                     options: {
                         package: 'user',
-                        protoPath: 'protos/proto_files/user.proto',
+                        protoPath: 'src/protos/proto_files/user.proto',
                         url: 'user_microservice:50052',
                     },
                 }),
@@ -43,17 +44,18 @@ import {
                 imports: [ConfigModule],
                 inject: [ConfigService],
                 name: 'AUTH_PACKAGE',
-                useFactory: (configService: ConfigService) => ({
+                useFactory: () => ({
                     transport: Transport.GRPC,
                     options: {
                         package: 'auth',
-                        protoPath: configService.get<string>('grpc_auth_path'),
+                        protoPath: 'src/protos/proto_files/auth.proto',
                     },
                 }),
             },
         ]),
         CryptModule,
         TokenModule,
+        PrometheusModule,
     ],
     controllers: [AuthService],
     providers: [
@@ -61,9 +63,21 @@ import {
             name: 'PROM_METRIC_AUTH_LOGIN_TOTAL',
             help: 'Total number of logins',
         }),
+        makeCounterProvider({
+            name: 'PROM_METRIC_AUTH_LOGIN_FAILURE_TOTAL',
+            help: 'Total number of failed login attempts',
+        }),
         makeHistogramProvider({
             name: 'PROM_METRIC_AUTH_LOGIN_DURATION',
             help: 'Duration of login requests',
+        }),
+        makeHistogramProvider({
+            name: 'PROM_METRIC_AUTH_REGISTER_DURATION',
+            help: 'Duration of registration requests',
+        }),
+        makeCounterProvider({
+            name: 'PROM_METRIC_AUTH_REGISTER_TOTAL',
+            help: 'Total number of registrations',
         }),
     ],
 })

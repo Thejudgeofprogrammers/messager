@@ -16,3 +16,6 @@ npx prisma migrate dev --name init - внутри контейнера user_micr
 
 
 https://supabase.com/
+
+
+metadata call grpc method

@@ -11,13 +11,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
                 name: 'SESSION_PACKAGE',
                 imports: [ConfigModule],
                 inject: [ConfigService],
-                useFactory: (configService: ConfigService) => ({
+                useFactory: () => ({
                     transport: Transport.GRPC,
                     options: {
                         package: 'session_user',
-                        protoPath:
-                            configService.get<string>('grpc_session_path'),
-                        url: configService.get<string>('grpc_session_url'),
+                        protoPath: 'src/protos/proto_files/session_user.proto',
+                        url: 'session_microservice:50053',
                     },
                 }),
             },

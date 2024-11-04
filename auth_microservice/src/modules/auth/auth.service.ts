@@ -20,78 +20,77 @@ import {
     LoginResponse,
     LogoutRequest,
     LogoutResponse,
-} from '../../../protos/proto_gen_files/auth';
+} from '../../protos/proto_gen_files/auth';
 
 import {
-    UserService as UserInterface,
-    // FindUserByEmailResponse,
+    UserService,
     FindUserByIdResponse,
-    // FindUserByPhoneNumberResponse,
-} from '../../../protos/proto_gen_files/user';
+} from '../../protos/proto_gen_files/user';
 
-import { SessionUserService as SessionUserInterfase } from '../../../protos/proto_gen_files/session_user';
+import { SessionUserService as SessionUserInterfase } from '../../protos/proto_gen_files/session_user';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
 
 @Controller('AuthService')
 export class AuthService implements AuthInterface {
     private readonly logger = new Logger(AuthService.name);
-    private userMicroService: UserInterface;
+    private userMicroService: UserService;
     private sessionUser: SessionUserInterfase;
 
     constructor(
         @Inject('USER_PACKAGE') private readonly userClient: ClientGrpc,
         private readonly cryptService: CryptService,
+
         private readonly tokenService: TokenService,
+
         @Inject('SESSION_PACKAGE')
         private readonly sessionUserClient: ClientGrpc,
+
         @InjectMetric('PROM_METRIC_AUTH_LOGIN_TOTAL')
         private readonly loginTotal: Counter<string>,
+
+        @InjectMetric('PROM_METRIC_AUTH_LOGIN_FAILURE_TOTAL')
+        private readonly loginFailureTotal: Counter<string>,
+
         @InjectMetric('PROM_METRIC_AUTH_LOGIN_DURATION')
         private readonly loginDuration: Histogram<string>,
+
+        @InjectMetric('PROM_METRIC_AUTH_REGISTER_DURATION')
+        private readonly registerDuration: Histogram<string>,
+
+        @InjectMetric('PROM_METRIC_AUTH_REGISTER_TOTAL')
+        private readonly registerTotal: Counter<string>,
     ) {}
 
-    onModuleInit() {
+    async onModuleInit() {
         try {
             this.userMicroService =
-                this.userClient.getService<UserInterface>('UserService');
-            this.sessionUser =
-                this.sessionUserClient.getService<SessionUserInterfase>(
-                    'SessionUserService',
-                );
+                this.userClient.getService<UserService>('UserService');
+            this.logger.log('User microservice initialized successfully.');
         } catch (error) {
-            this.logger.error('Error initializing services', error);
+            this.logger.error('Error initializing user microservice: ', error);
+            throw new InternalServerErrorException(
+                'User service is unavailable',
+            );
         }
     }
 
     @GrpcMethod('AuthService', 'Register')
     async Register(data: RegisterRequest): Promise<RegisterResponse> {
-        const end = this.loginDuration.startTimer();
-        this.loginTotal.inc();
+        const end = this.registerDuration.startTimer();
         try {
-            // if (!data.email && !data.phoneNumber && !data.password)
-            //     throw new BadRequestException('Data missing');
+            if (!data.email && !data.phoneNumber && !data.password)
+                throw new BadRequestException('Data missing');
 
-            // const existByEmail: FindUserByEmailResponse = await lastValueFrom(
-            //     from(
-            //         this.userMicroService.FindUserByEmail({
-            //             email: data.email,
-            //         }),
-            //     ),
-            // );
-
-            // if (existByEmail) throw new BadRequestException('User exist');
-
-            // const existByPhone: FindUserByPhoneNumberResponse =
-            //     await lastValueFrom(
-            //         from(
-            //             this.userMicroService.FindUserByPhoneNumber({
-            //                 phoneNumber: data.phoneNumber,
-            //             }),
-            //         ),
-            //     );
-
-            // if (existByPhone) throw new BadRequestException('User exist');
+            if (
+                !this.userMicroService ||
+                !this.userMicroService.FindUserByEmail
+            ) {
+                this.logger.error('userMicroService is not initialized');
+                throw new InternalServerErrorException(
+                    'User service is unavailable',
+                );
+            }
 
             const hashedPassword = await this.cryptService.hashPassword(
                 data.password,
@@ -108,12 +107,13 @@ export class AuthService implements AuthInterface {
                 ),
             );
 
+            this.registerTotal.inc();
             return {
                 message: responseUser.message,
                 status: responseUser.status,
             };
         } catch (e) {
-            this.logger.error('Error during registration', e); // Логируем ошибку
+            this.logger.error('Error during registration', e);
             throw new InternalServerErrorException(`Server have problem ${e}`);
         } finally {
             end();
@@ -123,7 +123,6 @@ export class AuthService implements AuthInterface {
     @GrpcMethod('AuthService', 'Login')
     async Login(data: LoginRequest): Promise<LoginResponse> {
         const end = this.loginDuration.startTimer();
-        this.loginTotal.inc();
         try {
             const { phoneNumber, email, password } = data;
             let existUser: FindUserByIdResponse;
@@ -168,9 +167,10 @@ export class AuthService implements AuthInterface {
                 await lastValueFrom(
                     from(this.sessionUser.SaveUserSession(userSessia)),
                 );
-
+                this.loginTotal.inc();
                 return userSessia;
             } else {
+                this.loginFailureTotal.inc();
                 throw new UnauthorizedException('User unauthorized');
             }
         } catch (e) {
@@ -183,7 +183,6 @@ export class AuthService implements AuthInterface {
     @GrpcMethod('AuthService', 'Logout')
     async Logout(data: LogoutRequest): Promise<LogoutResponse> {
         const end = this.loginDuration.startTimer();
-        this.loginTotal.inc();
         try {
             if (!data.userId) {
                 throw new BadRequestException('user_id is missing');
@@ -193,8 +192,10 @@ export class AuthService implements AuthInterface {
                     this.sessionUser.DeleteUserSession({ userId: data.userId }),
                 ),
             );
+            this.loginTotal.inc();
             return { message: 'User logout successfilly', status: 200 };
         } catch (e) {
+            this.logger.error('Error during logout', e);
             throw new InternalServerErrorException('Server have problem');
         } finally {
             end();

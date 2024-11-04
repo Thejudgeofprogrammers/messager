@@ -12,7 +12,7 @@ async function bootstrap() {
         transport: Transport.GRPC,
         options: {
             package: 'user',
-            protoPath: '/app/protos/proto_files/user.proto',
+            protoPath: 'src/protos/proto_files/user.proto',
             url: 'user_microservice:50052',
             onLoadPackageDefinition: (pkg, server) => {
                 new ReflectionService(pkg).addToServer(server);
