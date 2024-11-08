@@ -2,25 +2,26 @@ import {
     Injectable,
     NestMiddleware,
     UnauthorizedException,
+    OnModuleInit,
     Inject,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { Request, Response, NextFunction } from 'express';
-import { Observable, lastValueFrom } from 'rxjs';
-
-interface SessionService {
-    GetUserSession(data: {
-        userId: string;
-    }): Observable<{ userId: string; jwtToken: string }>;
-}
+import { from, lastValueFrom } from 'rxjs';
+import { SessionUserService } from 'src/protos/proto_gen_files/session_user';
 
 @Injectable()
-export class SessionMiddleware implements NestMiddleware {
-    private sessionService: SessionService;
-
-    constructor(@Inject('SESSION_PACKAGE') private client: ClientGrpc) {
-        this.sessionService =
-            this.client.getService<SessionService>('SessionUserService');
+export class SessionMiddleware implements NestMiddleware, OnModuleInit {
+    private sessionUserMicroservice: SessionUserService;
+    constructor(
+        @Inject('SESSION_USER_CLIENT')
+        private readonly sessionUserClient: ClientGrpc,
+    ) {}
+    onModuleInit() {
+        this.sessionUserMicroservice =
+            this.sessionUserClient.getService<SessionUserService>(
+                'SessionUserService',
+            );
     }
 
     async use(req: Request, res: Response, next: NextFunction) {
@@ -38,7 +39,11 @@ export class SessionMiddleware implements NestMiddleware {
 
         try {
             const response = await lastValueFrom(
-                this.sessionService.GetUserSession({ userId }),
+                from(
+                    this.sessionUserMicroservice.GetUserSession({
+                        userId,
+                    }),
+                ),
             );
 
             if (response.jwtToken === jwtToken) {

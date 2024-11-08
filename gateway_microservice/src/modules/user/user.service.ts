@@ -1,13 +1,13 @@
 import {
-    BadRequestException,
-    Inject,
     Injectable,
     InternalServerErrorException,
+    NotFoundException,
+    OnModuleInit,
 } from '@nestjs/common';
-import { ClientGrpc } from '@nestjs/microservices';
-
+import { Client, ClientGrpc } from '@nestjs/microservices';
+import { from, lastValueFrom } from 'rxjs';
 import {
-    UserService as UserInterface,
+    UserService as UserServiceClient,
     FindUserByIdRequest,
     FindUserByIdResponse,
     FindUserByEmailRequest,
@@ -18,24 +18,23 @@ import {
     FindUserByTagRequest,
     FindUserByUsernameResponse,
     FindUserByTagResponse,
-} from '../../protos/proto_gen_files/user';
-
-import { from, lastValueFrom } from 'rxjs';
+    UserData,
+} from 'src/protos/proto_gen_files/user';
+import { grpcClientOptionsUser } from 'src/config/grpc/grpc.options';
 
 @Injectable()
-export class UserService {
-    private userMicroService: UserInterface;
+export class UserService implements OnModuleInit {
+    @Client(grpcClientOptionsUser)
+    private readonly userClient: ClientGrpc;
 
-    constructor(
-        @Inject('USER_PACKAGE') private readonly userClient: ClientGrpc,
-    ) {}
+    private userMicroservice: UserServiceClient;
 
     onModuleInit() {
-        this.userMicroService =
-            this.userClient.getService<UserInterface>('UserService');
+        this.userMicroservice =
+            this.userClient.getService<UserServiceClient>('UserService');
     }
 
-    validateUser(payload) {
+    validateUser(payload: UserData): any {
         const validateUser = {
             userId: payload.userId,
             email: payload.email,
@@ -50,23 +49,19 @@ export class UserService {
         payload: FindUserByIdRequest,
     ): Promise<Omit<FindUserByIdResponse, 'passwordHash'>> {
         try {
-            if (!payload || !payload.userId) {
-                throw new BadRequestException('User ID is required');
-            }
-
-            const userData = await lastValueFrom(
+            const userInfo = await lastValueFrom(
                 from(
-                    this.userMicroService.FindUserById({
+                    this.userMicroservice.FindUserById({
                         userId: payload.userId,
                     }),
                 ),
             );
 
-            if (!userData) {
-                throw new InternalServerErrorException('User not found');
+            if (!userInfo.userData) {
+                throw new NotFoundException('User not found');
             }
 
-            const userWithoutPassword = this.validateUser(userData);
+            const userWithoutPassword = this.validateUser(userInfo.userData);
 
             return userWithoutPassword;
         } catch (e) {
@@ -81,12 +76,17 @@ export class UserService {
         payload: FindUserByTagRequest,
     ): Promise<Omit<FindUserByTagResponse, 'passwordHash'>> {
         try {
-            const userData = await lastValueFrom(
-                from(this.userMicroService.FindUserByTag({ tag: payload.tag })),
+            const userInfo = await lastValueFrom(
+                from(this.userMicroservice.FindUserByTag({ tag: payload.tag })),
             );
-            const userWithoutPassword = this.validateUser(userData);
 
-            return userWithoutPassword;
+            if (!userInfo.userData) {
+                throw new NotFoundException('User not found');
+            }
+
+            const userWithoutPassword = this.validateUser(userInfo.userData);
+
+            return { userData: userWithoutPassword };
         } catch (e) {
             throw new InternalServerErrorException(`Server have problem: ${e}`);
         }
@@ -94,21 +94,23 @@ export class UserService {
 
     async findUserByPhone(
         payload: FindUserByPhoneNumberRequest,
-    ): Promise<Omit<FindUserByPhoneNumberResponse, 'passwordHash'>> {
+    ): Promise<Omit<FindUserByPhoneNumberResponse, 'userData.passwordHash'>> {
         try {
-            if (!payload) {
-                throw new BadRequestException('Data missing');
-            }
-            const userData = await lastValueFrom(
+            const userInfo = await lastValueFrom(
                 from(
-                    this.userMicroService.FindUserByPhoneNumber({
+                    this.userMicroservice.FindUserByPhoneNumber({
                         phoneNumber: payload.phoneNumber,
                     }),
                 ),
             );
-            const userWithoutPassword = this.validateUser(userData);
 
-            return userWithoutPassword;
+            if (!userInfo) {
+                throw new NotFoundException('User not found');
+            }
+
+            const userWithoutPassword = this.validateUser(userInfo.userData);
+
+            return { userData: userWithoutPassword };
         } catch (e) {
             throw new InternalServerErrorException(`Server have problem: ${e}`);
         }
@@ -118,17 +120,19 @@ export class UserService {
         payload: FindUserByEmailRequest,
     ): Promise<Omit<FindUserByEmailResponse, 'passwordHash'>> {
         try {
-            if (!payload) {
-                throw new BadRequestException('Data missing');
-            }
-            const userData = await lastValueFrom(
+            const userInfo = await lastValueFrom(
                 from(
-                    this.userMicroService.FindUserByEmail({
+                    this.userMicroservice.FindUserByEmail({
                         email: payload.email,
                     }),
                 ),
             );
-            const userWithoutPassword = this.validateUser(userData);
+
+            if (!userInfo) {
+                throw new NotFoundException('User not found');
+            }
+
+            const userWithoutPassword = this.validateUser(userInfo.userData);
 
             return userWithoutPassword;
         } catch (e) {
@@ -140,18 +144,19 @@ export class UserService {
         payload: FindUserByUsernameRequest,
     ): Promise<FindUserByUsernameResponse> {
         try {
-            if (!payload) {
-                throw new BadRequestException('Data missing');
-            }
-            const userData = await lastValueFrom(
+            const userInfo = await lastValueFrom(
                 from(
-                    this.userMicroService.FindUserByUsername({
+                    this.userMicroservice.FindUserByUsername({
                         username: payload.username,
                     }),
                 ),
             );
 
-            return userData;
+            if (!userInfo) {
+                throw new NotFoundException('User not found');
+            }
+
+            return userInfo;
         } catch (e) {
             throw new InternalServerErrorException(`Server have problem: ${e}`);
         }

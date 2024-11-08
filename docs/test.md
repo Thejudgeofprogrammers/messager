@@ -1,77 +1,43 @@
 # Тесты api/auth
 
-## 1. Тест для маршрута register
-**Регистрация нового пользователя:**
+curl -X POST http://localhost:8080/api/auth/register -H "Content-Type: application/json" -d '{
 
-```bash
-curl -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "newUser",
-    "email": "newUser@example.com",
-    "password": "newUserPassword",
-    "phoneNumber": "0987654321"
-  }'
-```
+    "username": "testuser",
+    "email": "testuse32523r@example.com",
+    "password": "securepassword",
+    "phoneNumber": "1234527890"
+}'
+{"message":"User created","status":201}
 
-## 2. Тест для маршрута login
-**Запрос для входа с использованием email и пароля:**
+curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d '{
+    "password": "securepassword",
+    "phoneNumber": "1234527890"
+}'
+{    
+    "userId":1,
+    "jwtToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoidGVzdHVzZTMyNTIzckBleGFtcGxlLmNvbSIsImlhdCI6MTczMDkyMDA3MCwiZXhwIjoxNzMwOTIzNjcwfQ.f4a0t1njy1ByNNjNS7fJv1EZHMteCX_1ScRkokwjtCo",
+}
 
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "example@example.com",
-    "password": "examplePassword"
-  }' \
-  -c cookies.txt
-```
+curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d '{
+    "password": "securepassword",
+    "email": "testuse32523r@example.com"
+}'
+{    
+    "userId":1,
+    "jwtToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoidGVzdHVzZTMyNTIzckBleGFtcGxlLmNvbSIsImlhdCI6MTczMDkyMDA3MCwiZXhwIjoxNzMwOTIzNjcwfQ.f4a0t1njy1ByNNjNS7fJv1EZHMteCX_1ScRkokwjtCo",
+}
 
-**Запрос для входа с использованием номера телефона и пароля:**
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "phoneNumber": "1234567890",
-    "password": "examplePassword"
-  }' \
-  -c cookies.txt
-```
-**-c cookies.txt: сохраняет куки (например, jwtToken и userId) в файл cookies.txt.**
-
-## 3. Тест для маршрута logout
-**Выход пользователя из системы:**
-
-```bash
-curl -X POST http://localhost:8080/api/auth/logout \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": 1
-  }' \
-  -b cookies.txt
-```
-**-b cookies.txt: использует куки из файла cookies.txt для аутентификации текущего сеанса пользователя.**
+curl -X POST http://localhost:8080/api/auth/logout -H "Content-Type: application/json" -d '{
+    "userId":1,
+    "jwtToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoidGVzdHVzZTMyNTIzckBleGFtcGxlLmNvbSIsImlhdCI6MTczMDkyMDA3MCwiZXhwIjoxNzMwOTIzNjcwfQ.f4a0t1njy1ByNNjNS7fJv1EZHMteCX_1ScRkokwjtCo",
+}'
+{"message":"User session deleted successfully","status":200}
 
 
+curl -X GET "http://localhost:8080/api/user/findByEmail?email=testuse32523r@example.com" -H "Content-Type: application/json"
 
+{"userId":1,"jwtToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoidGVzdHVzZTMyNTIzckBleGFtcGxlLmNvbSIsImlhdCI6MTczMDkyMjg4MSwiZXhwIjoxNzMwOTI2NDgxfQ.-ogERiJKVsTFW_wvzv2LKG3nnQGDdeW4Lp4hcrsS6NY"}
 
-## 1. Поиск пользователя по ID
-```bash
-curl -X GET "http://localhost:8080/api/user/findById?userId=1"
-```
-## 2. Поиск пользователя по тегу
-```bash
-curl -X GET "http://localhost:8080/api/user/findByTag?tag=someTag"
-```
-## 3. Поиск пользователя по номеру телефона
-```bash
-curl -X GET "http://localhost:8080/api/user/findByPhone?phoneNumber=%2B123456789"
-```
-## 4. Поиск пользователя по email
-```bash
-curl -X GET "http://localhost:8080/api/user/findByEmail?email=test@example.com"
-```
-## 5. Поиск пользователя по имени пользователя
-```bash
-curl -X GET "http://localhost:8080/api/user/findByUsername?username=testuser"
-```
+curl -X GET "http://localhost:8080/api/user/findByEmail?email=testuse32523r@example.com" \
+-H "Content-Type: application/json" \
+-b "userId=1; jwtToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoidGVzdHVzZTMyNTIzckBleGFtcGxlLmNvbSIsImlhdCI6MTczMDkyMzI2MywiZXhwIjoxNzMwOTI2ODYzfQ.WviWuQqpuM2X_6lhwmTq47PIaA_9v41JQoVl--n4wFo"

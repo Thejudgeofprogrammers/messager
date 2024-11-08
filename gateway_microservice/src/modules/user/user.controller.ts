@@ -1,6 +1,8 @@
 import { Controller, Get, Query, Res } from '@nestjs/common';
 import { UserService } from './user.service';
 import { Response } from 'express';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { Counter, Histogram } from 'prom-client';
 
 import {
     FindUserByIdResponse,
@@ -13,9 +15,9 @@ import {
     FindUserByPhoneNumberRequest,
     FindUserByTagRequest,
     FindUserByIdRequest,
-} from '../../protos/proto_gen_files/user';
-import { InjectMetric } from '@willsoto/nestjs-prometheus';
-import { Counter, Histogram } from 'prom-client';
+} from 'src/protos/proto_gen_files/user';
+import { StatusClient } from 'src/common/status';
+import { errMessages } from 'src/common/messages';
 
 type ResponseWithoutPassword<T> = Promise<Response<Omit<T, 'passwordHash'>>>;
 
@@ -59,26 +61,32 @@ export class UserController {
     async findUserById(
         @Query() data: FindUserByIdRequest,
         @Res() res: Response,
-    ): ResponseWithoutPassword<FindUserByIdResponse> {
+    ): ResponseWithoutPassword<Response<FindUserByIdResponse>> {
         const end = this.findByIdDuration.startTimer();
+        if (!data.userId) {
+            return res
+                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
+                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
+        }
         try {
-            if (!data || !data.userId) {
-                return res.status(400).json({ message: 'Bad request' });
-            }
-
             const payload = await this.userService.findUserById({
                 userId: data.userId,
             });
 
             if (!payload) {
-                return res.status(404).json({ message: 'Resource not Found' });
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                    })
+                    .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
             }
 
             this.findByIdTotal.inc();
-            return res.status(200).json(payload);
+            return res.status(StatusClient.HTTP_STATUS_OK.status).json(payload);
         } catch (e) {
-            console.error('Error in findUserById:', e);
-            return res.status(500).json({ message: 'Server error' });
+            return res
+                .json({ message: errMessages.findUserById, error: e.message })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
         } finally {
             end();
         }
@@ -88,26 +96,32 @@ export class UserController {
     async findUserByTag(
         @Query() data: FindUserByTagRequest,
         @Res() res: Response,
-    ): ResponseWithoutPassword<FindUserByTagResponse> {
+    ): ResponseWithoutPassword<Response<FindUserByTagResponse>> {
         const end = this.findByTagDuration.startTimer();
+        if (!data.tag) {
+            return res
+                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
+                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
+        }
         try {
-            if (!data || !data.tag) {
-                return res.status(400).json({ message: 'Bad request' });
-            }
-
             const payload = await this.userService.findUserByTag({
                 tag: data.tag,
             });
 
             if (!payload) {
-                return res.status(404).json({ message: 'Resource not Found' });
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                    })
+                    .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
             }
 
             this.findByTagTotal.inc();
-            return res.status(200).json(payload);
+            return res.status(StatusClient.HTTP_STATUS_OK.status).json(payload);
         } catch (e) {
-            console.error('Error in findUserByTag:', e);
-            return res.status(500).json({ message: 'Server error' });
+            return res
+                .json({ message: errMessages.findByTag, error: e.message })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
         } finally {
             end();
         }
@@ -117,26 +131,32 @@ export class UserController {
     async findUserByPhone(
         @Query() data: FindUserByPhoneNumberRequest,
         @Res() res: Response,
-    ): ResponseWithoutPassword<FindUserByPhoneNumberResponse> {
+    ): ResponseWithoutPassword<Response<FindUserByPhoneNumberResponse>> {
         const end = this.findByPhoneDuration.startTimer();
+        if (!data.phoneNumber) {
+            return res
+                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
+                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
+        }
         try {
-            if (!data || !data.phoneNumber) {
-                return res.status(400).json({ message: 'Bad request' });
-            }
-
             const payload = await this.userService.findUserByPhone({
                 phoneNumber: data.phoneNumber,
             });
 
             if (!payload) {
-                return res.status(404).json({ message: 'Resource not Found' });
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                    })
+                    .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
             }
 
             this.findByPhoneTotal.inc();
-            return res.status(200).json(payload);
+            return res.status(StatusClient.HTTP_STATUS_OK.status).json(payload);
         } catch (e) {
-            console.error('Error in findUserByPhone:', e);
-            return res.status(500).json({ message: 'Server error' });
+            return res
+                .json({ message: errMessages.findByPhone, error: e.message })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
         } finally {
             end();
         }
@@ -146,51 +166,70 @@ export class UserController {
     async findUserByEmail(
         @Query() data: FindUserByEmailRequest,
         @Res() res: Response,
-    ): ResponseWithoutPassword<FindUserByEmailResponse> {
+    ): ResponseWithoutPassword<Response<FindUserByEmailResponse>> {
         const end = this.findByEmailDuration.startTimer();
+        if (!data.email) {
+            return res
+                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
+                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
+        }
         try {
-            if (!data || !data.email) {
-                return res.status(400).json({ message: 'Bad request' });
-            }
-
             const payload = await this.userService.findUserByEmail({
                 email: data.email,
             });
 
             if (!payload) {
-                return res.status(404).json({ message: 'Resource not Found' });
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                    })
+                    .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
             }
 
             this.findByEmailTotal.inc();
-            return res.status(200).json(payload);
+            return res.status(StatusClient.HTTP_STATUS_OK.status).json(payload);
         } catch (e) {
-            console.error('Error in findUserByEmail:', e);
-            return res.status(500).json({ message: 'Server error' });
+            return res
+                .json({ message: errMessages.findByEmail, error: e.message })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
         } finally {
             end();
         }
     }
 
     @Get('findByUsername')
-    async findUserName(
+    async findUsername(
         @Query() data: FindUserByUsernameRequest,
         @Res() res: Response,
     ): Promise<Response<FindUserByUsernameResponse>> {
         const end = this.findByUsernameDuration.startTimer();
+        if (!data.username) {
+            return res
+                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
+                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
+        }
         try {
-            if (!data || !data.username) {
-                return res.status(400).json({ message: 'Bad request' });
-            }
-
             const payload = await this.userService.findUserByUsername({
                 username: data.username,
             });
 
+            if (!payload) {
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                    })
+                    .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
+            }
+
             this.findByUsernameTotal.inc();
-            return res.status(200).json(payload);
+            return res.status(StatusClient.HTTP_STATUS_OK.status).json(payload);
         } catch (e) {
-            console.error('Error in findUserByUsername:', e);
-            return res.status(500).json({ message: 'Server error' });
+            return res
+                .json({
+                    message: errMessages.findByUsername,
+                    error: e.message,
+                })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
         } finally {
             end();
         }

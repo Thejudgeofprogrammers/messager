@@ -1,8 +1,4 @@
-import {
-    Controller,
-    InternalServerErrorException,
-    NotFoundException,
-} from '@nestjs/common';
+import { Controller, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
@@ -58,12 +54,14 @@ export class UserService implements UserInterfase {
 
             const existingUserByEmail =
                 await this.prismaService.findUserByEmail(request.email);
+
             if (existingUserByEmail) {
                 throw new InternalServerErrorException('Email already in use');
             }
 
             const existingUserByPhone =
                 await this.prismaService.findUserByPhone(request.phoneNumber);
+
             if (existingUserByPhone) {
                 throw new InternalServerErrorException(
                     'Phone number already in use',
@@ -71,11 +69,13 @@ export class UserService implements UserInterfase {
             }
 
             const newUser = await this.prismaService.createUser(request);
+
             if (!newUser) {
                 throw new InternalServerErrorException('User is not created');
             }
+
             this.createUserTotal.inc();
-            return { message: 'User created', status: 201 };
+            return { info: { message: 'User created', status: 201 } };
         } catch (e) {
             console.error('Error in CreateNewUser:', e);
             throw new InternalServerErrorException(
@@ -94,23 +94,25 @@ export class UserService implements UserInterfase {
         try {
             const { userId } = request;
             const existUser = await this.prismaService.findUserById(userId);
+
             if (!existUser) {
                 return {
-                    userId: 0,
-                    phoneNumber: '',
-                    email: '',
-                    tag: '',
-                    passwordHash: '',
-                    username: '',
+                    notFound: {
+                        message: 'User not found',
+                        status: 404,
+                    },
                 };
             }
+
             return {
-                userId: existUser.user_id,
-                phoneNumber: existUser.phone_number,
-                email: existUser.email,
-                tag: existUser.tag,
-                passwordHash: existUser.password_hash,
-                username: existUser.username,
+                userData: {
+                    userId: existUser.user_id,
+                    phoneNumber: existUser.phone_number,
+                    email: existUser.email,
+                    tag: existUser.tag,
+                    passwordHash: existUser.password_hash,
+                    username: existUser.username,
+                },
             };
         } catch (e) {
             console.error('Error in CreateNewUser:', e);
@@ -131,8 +133,8 @@ export class UserService implements UserInterfase {
             const { username } = request;
             const existUsers =
                 await this.prismaService.findUserByUsername(username);
-            this.findUserTotal.inc();
 
+            this.findUserTotal.inc();
             return {
                 users: existUsers
                     ? existUsers.map((user) => ({
@@ -159,35 +161,27 @@ export class UserService implements UserInterfase {
         try {
             const { tag } = request;
             const existUser = await this.prismaService.findUserByTag(tag);
+
             if (!existUser) {
                 return {
-                    userId: 0,
-                    phoneNumber: '',
-                    email: '',
-                    tag: '',
-                    passwordHash: '',
-                    username: '',
+                    notFound: {
+                        message: 'User not found',
+                        status: 404,
+                    },
                 };
             }
+
             return {
-                userId: existUser.user_id,
-                phoneNumber: existUser.phone_number,
-                email: existUser.email,
-                tag: existUser.tag,
-                passwordHash: existUser.password_hash,
-                username: existUser.username,
+                userData: {
+                    userId: existUser.user_id,
+                    phoneNumber: existUser.phone_number,
+                    email: existUser.email,
+                    tag: existUser.tag,
+                    passwordHash: existUser.password_hash,
+                    username: existUser.username,
+                },
             };
         } catch (e) {
-            if (e instanceof NotFoundException) {
-                return {
-                    userId: 0,
-                    phoneNumber: '',
-                    email: '',
-                    tag: '',
-                    passwordHash: '',
-                    username: '',
-                };
-            }
             console.error('Error in FindUserByEmail:', e);
             throw new InternalServerErrorException('Server error occurred');
         } finally {
@@ -203,27 +197,29 @@ export class UserService implements UserInterfase {
         try {
             const { email } = request;
             const existUser = await this.prismaService.findUserByEmail(email);
+
+            if (!existUser) {
+                return {
+                    notFound: {
+                        message: 'User not found',
+                        status: 404,
+                    },
+                };
+            }
+
             this.findUserTotal.inc();
 
             return {
-                userId: existUser.user_id,
-                phoneNumber: existUser.phone_number,
-                email: existUser.email,
-                tag: existUser.tag,
-                passwordHash: existUser.password_hash,
-                username: existUser.username,
+                userData: {
+                    userId: existUser.user_id,
+                    phoneNumber: existUser.phone_number,
+                    email: existUser.email,
+                    tag: existUser.tag,
+                    passwordHash: existUser.password_hash,
+                    username: existUser.username,
+                },
             };
         } catch (e) {
-            if (e instanceof NotFoundException) {
-                return {
-                    userId: 0,
-                    phoneNumber: '',
-                    email: '',
-                    tag: '',
-                    passwordHash: '',
-                    username: '',
-                };
-            }
             console.error('Error in FindUserByEmail:', e);
             throw new InternalServerErrorException('Server error occurred');
         } finally {
@@ -240,35 +236,28 @@ export class UserService implements UserInterfase {
             const { phoneNumber } = request;
             const existUser =
                 await this.prismaService.findUserByPhone(phoneNumber);
+
             if (!existUser) {
                 return {
-                    userId: 0,
-                    phoneNumber: '',
-                    email: '',
-                    tag: '',
-                    passwordHash: '',
-                    username: '',
+                    notFound: {
+                        message: 'User not found',
+                        status: 404,
+                    },
                 };
             }
+
+            this.findUserTotal.inc();
             return {
-                userId: existUser.user_id,
-                phoneNumber: existUser.phone_number,
-                email: existUser.email,
-                tag: existUser.tag,
-                passwordHash: existUser.password_hash,
-                username: existUser.username,
+                userData: {
+                    userId: existUser.user_id,
+                    phoneNumber: existUser.phone_number,
+                    email: existUser.email,
+                    tag: existUser.tag,
+                    passwordHash: existUser.password_hash,
+                    username: existUser.username,
+                },
             };
         } catch (e) {
-            if (e instanceof NotFoundException) {
-                return {
-                    userId: 0,
-                    phoneNumber: '',
-                    email: '',
-                    tag: '',
-                    passwordHash: '',
-                    username: '',
-                };
-            }
             console.error('Error in FindUserByEmail:', e);
             throw new InternalServerErrorException('Server error occurred');
         } finally {

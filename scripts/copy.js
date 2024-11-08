@@ -2,10 +2,11 @@ const fs = require('fs-extra');
 const path = require('path');
 
 const microservices = [
-    '../session_microservice/src',
-    '../user_microservice/src',
-    '../auth_microservice/src',
-    '../gateway_microservice/src'
+    '../session_microservice',
+    '../user_microservice',
+    '../auth_microservice',
+    '../gateway_microservice',
+    '../chat_microservice'
 ];
 
 const sourceDir = path.join(__dirname, '../protos');
@@ -13,7 +14,7 @@ const destinationDir = 'protos';
 
 async function copyProtos() {
     for (const microservice of microservices) {
-        const targetDir = path.join(__dirname, microservice, destinationDir);
+        const targetDir = path.join(__dirname, microservice, 'src', destinationDir);
 
         try {
             await fs.remove(targetDir);

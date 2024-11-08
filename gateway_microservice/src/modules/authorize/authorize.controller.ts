@@ -1,22 +1,22 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
-import {
-    LoginRequest,
-    LoginResponse,
-    LogoutRequest,
-    LogoutResponse,
-    RegisterRequest,
-    RegisterResponse,
-} from '../../protos/proto_gen_files/auth';
-import { AuthorizeService } from './authorize.service';
-import { myOptionalCookieOptions } from '../../config/config.cookie';
 import { Response } from 'express';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
+import {
+    LoginResponse,
+    RegisterRequest,
+    RegisterResponse,
+} from 'src/protos/proto_gen_files/auth';
+import { AuthorizeService } from './authorize.service';
+import { myOptionalCookieOptions } from 'src/config/config.cookie';
+import { LoginFormDTO, LogoutDTO } from './dto';
+import { StatusClient } from 'src/common/status';
+import { errMessages } from 'src/common/messages';
 
 @Controller('auth')
 export class AuthorizeController {
     constructor(
-        private readonly authService: AuthorizeService,
+        private readonly authorizeService: AuthorizeService,
 
         @InjectMetric('PROM_METRIC_AUTH_LOGIN_TOTAL')
         private readonly loginTotal: Counter<string>,
@@ -39,25 +39,30 @@ export class AuthorizeController {
 
     @Post('login')
     async loginUser(
-        @Body() payload: LoginRequest,
+        @Body() payload: LoginFormDTO,
         @Res() res: Response,
     ): Promise<Response<LoginResponse>> {
         const end = this.loginDuration.startTimer();
+        if (!payload) {
+            return res
+                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
+                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
+        }
         try {
-            const data = await this.authService.loginUser(payload);
-            res.cookie('jwtToken', data.jwtToken, myOptionalCookieOptions);
-            res.cookie(
-                'userId',
-                data.userId.toString(),
-                myOptionalCookieOptions,
-            );
+            const data = await this.authorizeService.loginUser(payload);
+            const { userId, jwtToken } = data;
+            res.cookie('jwtToken', jwtToken, myOptionalCookieOptions);
+            res.cookie('userId', userId.toString(), myOptionalCookieOptions);
 
             this.loginTotal.inc();
-            return res.json({ userId: data.userId, jwtToken: data.jwtToken });
+            return res.json({ userId, jwtToken });
         } catch (e) {
-            res.json({ message: 'Server encountered a problem during' }).status(
-                500,
-            );
+            return res
+                .json({
+                    message: errMessages.login,
+                    error: e.message,
+                })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
         } finally {
             end();
         }
@@ -69,15 +74,20 @@ export class AuthorizeController {
         @Res() res: Response,
     ): Promise<Response<RegisterResponse>> {
         const end = this.registerDuration.startTimer();
+        if (!payload) {
+            return res
+                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
+                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
+        }
         try {
-            const data = await this.authService.registerUser(payload);
-            this.registerTotal.inc();
-            return res.json({ message: data.message, status: data.status });
+            const {
+                info: { message, status },
+            } = await this.authorizeService.registerUser(payload);
+            return res.json({ message, status });
         } catch (e) {
-            console.log(e);
-            res.json({ message: 'Server encountered a problem during' }).status(
-                500,
-            );
+            return res
+                .json({ message: errMessages.registry, error: e.message })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
         } finally {
             end();
         }
@@ -85,20 +95,32 @@ export class AuthorizeController {
 
     @Post('logout')
     async logoutUser(
-        @Body() payload: LogoutRequest,
+        @Body() payload: LogoutDTO,
         @Res() res: Response,
-    ): Promise<Response<LogoutResponse>> {
+    ): Promise<Response<LogoutDTO>> {
         const end = this.logoutDuration.startTimer();
+        if (!payload) {
+            return res
+                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
+                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
+        }
         try {
+            const data = await this.authorizeService.logoutUser(
+                payload.userId,
+                payload.jwtToken,
+            );
+            const { message, status } = data;
             res.clearCookie('jwtToken');
             res.clearCookie('userId');
-            const data = await this.authService.logoutUser(payload);
             this.logoutTotal.inc();
-            return res.json({ message: data.message, status: data.status });
+            return res.json({ message, status });
         } catch (e) {
-            res.json({ message: 'Server encountered a problem during' }).status(
-                500,
-            );
+            return res
+                .json({
+                    message: errMessages.logout,
+                    error: e.message,
+                })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
         } finally {
             end();
         }
