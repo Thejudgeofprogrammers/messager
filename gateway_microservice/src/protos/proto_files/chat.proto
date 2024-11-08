@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+package chat;
+
+import "google/protobuf/timestamp.proto";
+
+// Определение сервиса
+service ChatService {
+    rpc CreateNewChat(CreateNewChatRequest) returns (CreateNewChatResponse);
+    rpc GetChatById(GetChatByIdRequest) returns (GetChatByIdResponse);
+    rpc GetChatByChatName(GetChatByChatNameRequest) returns (GetChatByChatNameResponse);
+    rpc UpdateChatById(UpdateChatByIdRequest) returns (UpdateChatByIdResponse);
+    rpc DeleteChatById(DeleteChatByIdRequest) returns (DeleteChatByIdResponse);
+    rpc GetAllChats(GetAllChatsRequest) returns (GetAllChatsResponse);
+    rpc AddUserToChat(AddUserToChatRequest) returns (AddUserToChatResponse);
+    rpc RemoveUserFromChat(RemoveUserFromChatRequest) returns (RemoveUserFromChatResponse);
+}
+
+// Запрос на создание нового чата
+message CreateNewChatRequest {
+    string chatName = 1;
+    string chatType = 2;
+    int32 userId = 3;
+}
+
+// Ответ на создание нового чата
+message CreateNewChatResponse {
+    string chat_id = 1; // ID созданного чата
+}
+
+// Запрос для получения чата по ID
+message GetChatByIdRequest {
+    string chat_id = 1;
+}
+
+// Ответ для получения чата по ID
+message GetChatByIdResponse {
+    oneof result {
+        Chat chat_data = 1;
+        ErrorResponse not_found = 2;
+    }
+}
+
+// Запрос для получения чата по имени
+message GetChatByChatNameRequest {
+    string chatName = 1;
+}
+
+// Ответ для получения чата по имени
+message GetChatByChatNameResponse {
+    oneof result {
+        Chat chat_data = 1;
+        ErrorResponse not_found = 2;
+    }
+}
+
+// Запрос для обновления чата по ID
+message UpdateChatByIdRequest {
+    string chat_id = 1;
+    string chatName = 2;
+    string chatType = 3;
+    LastMessage lastMessage = 4;
+}
+
+// Ответ для обновления чата по ID
+message UpdateChatByIdResponse {
+    GenericResponse response = 1;
+}
+
+// Запрос для удаления чата по ID
+message DeleteChatByIdRequest {
+    string chat_id = 1;
+}
+
+// Ответ для удаления чата по ID
+message DeleteChatByIdResponse {
+    GenericResponse response = 1;
+}
+
+// Запрос для получения всех чатов
+message GetAllChatsRequest {
+    int32 user_id = 1;
+}
+
+// Ответ для получения всех чатов
+message GetAllChatsResponse {
+    repeated Chat chats = 1;
+}
+
+// Запрос для добавления пользователя в чат
+message AddUserToChatRequest {
+    string chat_id = 1;
+    ChatParticipant participant = 2;
+}
+
+// Ответ для добавления пользователя в чат
+message AddUserToChatResponse {
+    GenericResponse response = 1;
+}
+
+// Запрос для удаления пользователя из чата
+message RemoveUserFromChatRequest {
+    string chat_id = 1;
+    int32 user_id = 2;
+}
+
+// Ответ для удаления пользователя из чата
+message RemoveUserFromChatResponse {
+    GenericResponse response = 1;
+}
+
+// Сообщение для представления информации о чате
+message Chat {
+    string chat_id = 1;
+    string chatName = 2;
+    string chatType = 3;
+    LastMessage lastMessage = 4;
+    repeated ChatParticipant participants = 5;
+    repeated Message messages = 6;
+    google.protobuf.Timestamp createdAt = 7;
+}
+
+// Сообщение для представления последнего сообщения
+message LastMessage {
+    string message_id = 1;
+    int32 sender_id = 2;
+    string preview = 3;
+}
+
+// Сообщение для представления участника чата
+message ChatParticipant {
+    int32 user_id = 1;
+    string role = 2; // 'owner', 'admin', 'member'
+}
+
+// Сообщение для представления сообщения
+message Message {
+    string message_id = 1;
+    int32 sender_id = 2;
+    string text = 3;
+    google.protobuf.Timestamp timestamp = 4;
+}
+
+// Структура для обработки ошибок
+message ErrorResponse {
+    string message = 1;
+    int32 status = 2;
+}
+
+// Общее сообщение для успешного ответа
+message GenericResponse {
+    string message = 1;
+    int32 status = 2;
+}

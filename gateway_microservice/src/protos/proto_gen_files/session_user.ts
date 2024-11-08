@@ -29,10 +29,12 @@ export interface GetUserSessionResponse {
 
 export interface DeleteUserSessionRequest {
   userId: number;
+  jwtToken: string;
 }
 
 export interface DeleteUserSessionResponse {
   message: string;
+  status: number;
 }
 
 function createBaseSaveUserSessionRequest(): SaveUserSessionRequest {
@@ -304,13 +306,16 @@ export const GetUserSessionResponse: MessageFns<GetUserSessionResponse> = {
 };
 
 function createBaseDeleteUserSessionRequest(): DeleteUserSessionRequest {
-  return { userId: 0 };
+  return { userId: 0, jwtToken: "" };
 }
 
 export const DeleteUserSessionRequest: MessageFns<DeleteUserSessionRequest> = {
   encode(message: DeleteUserSessionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.userId !== 0) {
       writer.uint32(8).int32(message.userId);
+    }
+    if (message.jwtToken !== "") {
+      writer.uint32(18).string(message.jwtToken);
     }
     return writer;
   },
@@ -330,6 +335,14 @@ export const DeleteUserSessionRequest: MessageFns<DeleteUserSessionRequest> = {
           message.userId = reader.int32();
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.jwtToken = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -340,13 +353,19 @@ export const DeleteUserSessionRequest: MessageFns<DeleteUserSessionRequest> = {
   },
 
   fromJSON(object: any): DeleteUserSessionRequest {
-    return { userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0 };
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      jwtToken: isSet(object.jwtToken) ? globalThis.String(object.jwtToken) : "",
+    };
   },
 
   toJSON(message: DeleteUserSessionRequest): unknown {
     const obj: any = {};
     if (message.userId !== 0) {
       obj.userId = Math.round(message.userId);
+    }
+    if (message.jwtToken !== "") {
+      obj.jwtToken = message.jwtToken;
     }
     return obj;
   },
@@ -357,18 +376,22 @@ export const DeleteUserSessionRequest: MessageFns<DeleteUserSessionRequest> = {
   fromPartial<I extends Exact<DeepPartial<DeleteUserSessionRequest>, I>>(object: I): DeleteUserSessionRequest {
     const message = createBaseDeleteUserSessionRequest();
     message.userId = object.userId ?? 0;
+    message.jwtToken = object.jwtToken ?? "";
     return message;
   },
 };
 
 function createBaseDeleteUserSessionResponse(): DeleteUserSessionResponse {
-  return { message: "" };
+  return { message: "", status: 0 };
 }
 
 export const DeleteUserSessionResponse: MessageFns<DeleteUserSessionResponse> = {
   encode(message: DeleteUserSessionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.message !== "") {
       writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
     }
     return writer;
   },
@@ -388,6 +411,14 @@ export const DeleteUserSessionResponse: MessageFns<DeleteUserSessionResponse> = 
           message.message = reader.string();
           continue;
         }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -398,13 +429,19 @@ export const DeleteUserSessionResponse: MessageFns<DeleteUserSessionResponse> = 
   },
 
   fromJSON(object: any): DeleteUserSessionResponse {
-    return { message: isSet(object.message) ? globalThis.String(object.message) : "" };
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
   },
 
   toJSON(message: DeleteUserSessionResponse): unknown {
     const obj: any = {};
     if (message.message !== "") {
       obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
     }
     return obj;
   },
@@ -415,6 +452,7 @@ export const DeleteUserSessionResponse: MessageFns<DeleteUserSessionResponse> = 
   fromPartial<I extends Exact<DeepPartial<DeleteUserSessionResponse>, I>>(object: I): DeleteUserSessionResponse {
     const message = createBaseDeleteUserSessionResponse();
     message.message = object.message ?? "";
+    message.status = object.status ?? 0;
     return message;
   },
 };

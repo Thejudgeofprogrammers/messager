@@ -1,4 +1,4 @@
-FROM node:18-alpine3.20 AS builder
+FROM node:20-alpine3.20 AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ RUN npm install && npx prisma generate
 COPY . .
 RUN npm run build && echo "Build completed successfully" || echo "Build failed"
 
-FROM node:18-alpine3.20
+FROM node:20-alpine3.20
 
 WORKDIR /app
 

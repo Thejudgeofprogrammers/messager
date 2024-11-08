@@ -17,28 +17,23 @@ export interface RegisterRequest {
 }
 
 export interface RegisterResponse {
-  message: string;
-  status: number;
+  username: string;
+  email: string;
+  passwordHash: string;
+  phoneNumber: string;
 }
 
 export interface LoginRequest {
   phoneNumber?: string | undefined;
   email?: string | undefined;
   password: string;
+  passwordHash: string;
+  userId: number;
 }
 
 export interface LoginResponse {
   userId: number;
   jwtToken: string;
-}
-
-export interface LogoutRequest {
-  userId: number;
-}
-
-export interface LogoutResponse {
-  message: string;
-  status: number;
 }
 
 function createBaseRegisterRequest(): RegisterRequest {
@@ -150,16 +145,22 @@ export const RegisterRequest: MessageFns<RegisterRequest> = {
 };
 
 function createBaseRegisterResponse(): RegisterResponse {
-  return { message: "", status: 0 };
+  return { username: "", email: "", passwordHash: "", phoneNumber: "" };
 }
 
 export const RegisterResponse: MessageFns<RegisterResponse> = {
   encode(message: RegisterResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.message !== "") {
-      writer.uint32(10).string(message.message);
+    if (message.username !== "") {
+      writer.uint32(10).string(message.username);
     }
-    if (message.status !== 0) {
-      writer.uint32(16).int32(message.status);
+    if (message.email !== "") {
+      writer.uint32(18).string(message.email);
+    }
+    if (message.passwordHash !== "") {
+      writer.uint32(26).string(message.passwordHash);
+    }
+    if (message.phoneNumber !== "") {
+      writer.uint32(34).string(message.phoneNumber);
     }
     return writer;
   },
@@ -176,15 +177,31 @@ export const RegisterResponse: MessageFns<RegisterResponse> = {
             break;
           }
 
-          message.message = reader.string();
+          message.username = reader.string();
           continue;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 18) {
             break;
           }
 
-          message.status = reader.int32();
+          message.email = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.passwordHash = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.phoneNumber = reader.string();
           continue;
         }
       }
@@ -198,18 +215,26 @@ export const RegisterResponse: MessageFns<RegisterResponse> = {
 
   fromJSON(object: any): RegisterResponse {
     return {
-      message: isSet(object.message) ? globalThis.String(object.message) : "",
-      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+      username: isSet(object.username) ? globalThis.String(object.username) : "",
+      email: isSet(object.email) ? globalThis.String(object.email) : "",
+      passwordHash: isSet(object.passwordHash) ? globalThis.String(object.passwordHash) : "",
+      phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : "",
     };
   },
 
   toJSON(message: RegisterResponse): unknown {
     const obj: any = {};
-    if (message.message !== "") {
-      obj.message = message.message;
+    if (message.username !== "") {
+      obj.username = message.username;
     }
-    if (message.status !== 0) {
-      obj.status = Math.round(message.status);
+    if (message.email !== "") {
+      obj.email = message.email;
+    }
+    if (message.passwordHash !== "") {
+      obj.passwordHash = message.passwordHash;
+    }
+    if (message.phoneNumber !== "") {
+      obj.phoneNumber = message.phoneNumber;
     }
     return obj;
   },
@@ -219,14 +244,16 @@ export const RegisterResponse: MessageFns<RegisterResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<RegisterResponse>, I>>(object: I): RegisterResponse {
     const message = createBaseRegisterResponse();
-    message.message = object.message ?? "";
-    message.status = object.status ?? 0;
+    message.username = object.username ?? "";
+    message.email = object.email ?? "";
+    message.passwordHash = object.passwordHash ?? "";
+    message.phoneNumber = object.phoneNumber ?? "";
     return message;
   },
 };
 
 function createBaseLoginRequest(): LoginRequest {
-  return { phoneNumber: undefined, email: undefined, password: "" };
+  return { phoneNumber: undefined, email: undefined, password: "", passwordHash: "", userId: 0 };
 }
 
 export const LoginRequest: MessageFns<LoginRequest> = {
@@ -239,6 +266,12 @@ export const LoginRequest: MessageFns<LoginRequest> = {
     }
     if (message.password !== "") {
       writer.uint32(26).string(message.password);
+    }
+    if (message.passwordHash !== "") {
+      writer.uint32(34).string(message.passwordHash);
+    }
+    if (message.userId !== 0) {
+      writer.uint32(40).int32(message.userId);
     }
     return writer;
   },
@@ -274,6 +307,22 @@ export const LoginRequest: MessageFns<LoginRequest> = {
           message.password = reader.string();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.passwordHash = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -288,6 +337,8 @@ export const LoginRequest: MessageFns<LoginRequest> = {
       phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : undefined,
       email: isSet(object.email) ? globalThis.String(object.email) : undefined,
       password: isSet(object.password) ? globalThis.String(object.password) : "",
+      passwordHash: isSet(object.passwordHash) ? globalThis.String(object.passwordHash) : "",
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
     };
   },
 
@@ -302,6 +353,12 @@ export const LoginRequest: MessageFns<LoginRequest> = {
     if (message.password !== "") {
       obj.password = message.password;
     }
+    if (message.passwordHash !== "") {
+      obj.passwordHash = message.passwordHash;
+    }
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
     return obj;
   },
 
@@ -313,6 +370,8 @@ export const LoginRequest: MessageFns<LoginRequest> = {
     message.phoneNumber = object.phoneNumber ?? undefined;
     message.email = object.email ?? undefined;
     message.password = object.password ?? "";
+    message.passwordHash = object.passwordHash ?? "";
+    message.userId = object.userId ?? 0;
     return message;
   },
 };
@@ -393,144 +452,9 @@ export const LoginResponse: MessageFns<LoginResponse> = {
   },
 };
 
-function createBaseLogoutRequest(): LogoutRequest {
-  return { userId: 0 };
-}
-
-export const LogoutRequest: MessageFns<LogoutRequest> = {
-  encode(message: LogoutRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.userId !== 0) {
-      writer.uint32(8).int32(message.userId);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): LogoutRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseLogoutRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.userId = reader.int32();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): LogoutRequest {
-    return { userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0 };
-  },
-
-  toJSON(message: LogoutRequest): unknown {
-    const obj: any = {};
-    if (message.userId !== 0) {
-      obj.userId = Math.round(message.userId);
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<LogoutRequest>, I>>(base?: I): LogoutRequest {
-    return LogoutRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<LogoutRequest>, I>>(object: I): LogoutRequest {
-    const message = createBaseLogoutRequest();
-    message.userId = object.userId ?? 0;
-    return message;
-  },
-};
-
-function createBaseLogoutResponse(): LogoutResponse {
-  return { message: "", status: 0 };
-}
-
-export const LogoutResponse: MessageFns<LogoutResponse> = {
-  encode(message: LogoutResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.message !== "") {
-      writer.uint32(10).string(message.message);
-    }
-    if (message.status !== 0) {
-      writer.uint32(16).int32(message.status);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): LogoutResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseLogoutResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.message = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.status = reader.int32();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): LogoutResponse {
-    return {
-      message: isSet(object.message) ? globalThis.String(object.message) : "",
-      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
-    };
-  },
-
-  toJSON(message: LogoutResponse): unknown {
-    const obj: any = {};
-    if (message.message !== "") {
-      obj.message = message.message;
-    }
-    if (message.status !== 0) {
-      obj.status = Math.round(message.status);
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<LogoutResponse>, I>>(base?: I): LogoutResponse {
-    return LogoutResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<LogoutResponse>, I>>(object: I): LogoutResponse {
-    const message = createBaseLogoutResponse();
-    message.message = object.message ?? "";
-    message.status = object.status ?? 0;
-    return message;
-  },
-};
-
 export interface AuthService {
   Register(request: RegisterRequest): Promise<RegisterResponse>;
   Login(request: LoginRequest): Promise<LoginResponse>;
-  Logout(request: LogoutRequest): Promise<LogoutResponse>;
 }
 
 export const AuthServiceServiceName = "auth.AuthService";
@@ -542,7 +466,6 @@ export class AuthServiceClientImpl implements AuthService {
     this.rpc = rpc;
     this.Register = this.Register.bind(this);
     this.Login = this.Login.bind(this);
-    this.Logout = this.Logout.bind(this);
   }
   Register(request: RegisterRequest): Promise<RegisterResponse> {
     const data = RegisterRequest.encode(request).finish();
@@ -554,12 +477,6 @@ export class AuthServiceClientImpl implements AuthService {
     const data = LoginRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "Login", data);
     return promise.then((data) => LoginResponse.decode(new BinaryReader(data)));
-  }
-
-  Logout(request: LogoutRequest): Promise<LogoutResponse> {
-    const data = LogoutRequest.encode(request).finish();
-    const promise = this.rpc.request(this.service, "Logout", data);
-    return promise.then((data) => LogoutResponse.decode(new BinaryReader(data)));
   }
 }
 

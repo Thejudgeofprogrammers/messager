@@ -18,15 +18,14 @@ service UserService {
 }
 
 message CreateNewUserRequest {
-    string phone_number = 2;
-    string email = 3;
-    string password_hash = 5;
-    string username = 6;
+    string email = 1;
+    string password_hash = 2;
+    string phone_number = 3;
+    string username = 4;
 }
 
 message CreateNewUserResponse {
-    string message = 1;
-    int32  status = 2;
+    ResponseMessage info = 1;
 }
 
 message FindUserByIdRequest {
@@ -34,39 +33,11 @@ message FindUserByIdRequest {
 }
 
 message FindUserByIdResponse {
-    int32 user_id = 1;
-    string phone_number = 2;
-    string email = 3;
-    string tag = 4;
-    string password_hash = 5;
-    string username = 6;
+    oneof user {
+        UserData user_data = 1;
+        UserNotFoundResponse not_found = 2;
+    }
 }
-
-// message FindUserProfileRequest {
-//     int32 user_id = 1;
-// }
-
-// message FindUserProfileResponse {
-//     int32 user_id = 1;
-//     string description = 2;
-//     string created_at = 3;
-//     string last_login = 4;
-// }
-
-// message FindUserAvatarsRequest {
-//     int32 user_id = 1;
-// }
-
-// message Avatar {
-//     int32 user_id = 1;
-//     string avatar_id = 2;
-//     string avatar_url = 3;
-//     bool is_active = 4;
-// }
-
-// message FindUserAvatarsResponse {
-//     repeated Avatar avatars = 1;
-// }
 
 message FindUserByUsernameRequest {
     string username = 1;
@@ -76,22 +47,15 @@ message FindUserByUsernameResponse {
     repeated UserArray users = 1;
 }
 
-message UserArray {
-    int32 user_id = 1;
-    string username = 2;
-}
-
 message FindUserByTagRequest {
     string tag = 1;
 }
 
 message FindUserByTagResponse {
-    int32 user_id = 1;
-    string phone_number = 2;
-    string email = 3;
-    string tag = 4;
-    string password_hash = 5;
-    string username = 6;
+    oneof user {
+        UserData user_data = 1;
+        UserNotFoundResponse not_found = 2;
+    }
 }
 
 message FindUserByEmailRequest {
@@ -99,12 +63,10 @@ message FindUserByEmailRequest {
 }
 
 message FindUserByEmailResponse {
-    int32 user_id = 1;
-    string phone_number = 2;
-    string email = 3;
-    string tag = 4;
-    string password_hash = 5;
-    string username = 6;
+    oneof user {
+        UserData user_data = 1;
+        UserNotFoundResponse not_found = 2;
+    }
 }
 
 message FindUserByPhoneNumberRequest {
@@ -112,12 +74,34 @@ message FindUserByPhoneNumberRequest {
 }
 
 message FindUserByPhoneNumberResponse {
+    oneof user {
+        UserData user_data = 1;
+        UserNotFoundResponse not_found = 2;
+    }
+}
+
+message UserData {
     int32 user_id = 1;
     string phone_number = 2;
     string email = 3;
     string tag = 4;
     string password_hash = 5;
     string username = 6;
+}
+
+message UserNotFoundResponse {
+    string message = 1;
+    int32 status = 2;
+}
+
+message ResponseMessage {
+    string message = 1;
+    int32 status = 2;
+}
+
+message UserArray {
+    int32 user_id = 1;
+    string username = 2;
 }
 
 // message UpdateUserProfileRequest {
@@ -153,4 +137,31 @@ message FindUserByPhoneNumberResponse {
 
 // message DeleteAvatarUserResponse {
 //     string message = 1; // "Successful delete avatar"
+// }
+
+
+// message FindUserProfileRequest {
+//     int32 user_id = 1;
+// }
+
+// message FindUserProfileResponse {
+//     int32 user_id = 1;
+//     string description = 2;
+//     string created_at = 3;
+//     string last_login = 4;
+// }
+
+// message FindUserAvatarsRequest {
+//     int32 user_id = 1;
+// }
+
+// message Avatar {
+//     int32 user_id = 1;
+//     string avatar_id = 2;
+//     string avatar_url = 3;
+//     bool is_active = 4;
+// }
+
+// message FindUserAvatarsResponse {
+//     repeated Avatar avatars = 1;
 // }

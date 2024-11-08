@@ -10,15 +10,14 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 export const protobufPackage = "user";
 
 export interface CreateNewUserRequest {
-  phoneNumber: string;
   email: string;
   passwordHash: string;
+  phoneNumber: string;
   username: string;
 }
 
 export interface CreateNewUserResponse {
-  message: string;
-  status: number;
+  info: ResponseMessage | undefined;
 }
 
 export interface FindUserByIdRequest {
@@ -26,12 +25,8 @@ export interface FindUserByIdRequest {
 }
 
 export interface FindUserByIdResponse {
-  userId: number;
-  phoneNumber: string;
-  email: string;
-  tag: string;
-  passwordHash: string;
-  username: string;
+  userData?: UserData | undefined;
+  notFound?: UserNotFoundResponse | undefined;
 }
 
 export interface FindUserByUsernameRequest {
@@ -42,22 +37,13 @@ export interface FindUserByUsernameResponse {
   users: UserArray[];
 }
 
-export interface UserArray {
-  userId: number;
-  username: string;
-}
-
 export interface FindUserByTagRequest {
   tag: string;
 }
 
 export interface FindUserByTagResponse {
-  userId: number;
-  phoneNumber: string;
-  email: string;
-  tag: string;
-  passwordHash: string;
-  username: string;
+  userData?: UserData | undefined;
+  notFound?: UserNotFoundResponse | undefined;
 }
 
 export interface FindUserByEmailRequest {
@@ -65,12 +51,8 @@ export interface FindUserByEmailRequest {
 }
 
 export interface FindUserByEmailResponse {
-  userId: number;
-  phoneNumber: string;
-  email: string;
-  tag: string;
-  passwordHash: string;
-  username: string;
+  userData?: UserData | undefined;
+  notFound?: UserNotFoundResponse | undefined;
 }
 
 export interface FindUserByPhoneNumberRequest {
@@ -78,6 +60,11 @@ export interface FindUserByPhoneNumberRequest {
 }
 
 export interface FindUserByPhoneNumberResponse {
+  userData?: UserData | undefined;
+  notFound?: UserNotFoundResponse | undefined;
+}
+
+export interface UserData {
   userId: number;
   phoneNumber: string;
   email: string;
@@ -86,23 +73,38 @@ export interface FindUserByPhoneNumberResponse {
   username: string;
 }
 
+export interface UserNotFoundResponse {
+  message: string;
+  status: number;
+}
+
+export interface ResponseMessage {
+  message: string;
+  status: number;
+}
+
+export interface UserArray {
+  userId: number;
+  username: string;
+}
+
 function createBaseCreateNewUserRequest(): CreateNewUserRequest {
-  return { phoneNumber: "", email: "", passwordHash: "", username: "" };
+  return { email: "", passwordHash: "", phoneNumber: "", username: "" };
 }
 
 export const CreateNewUserRequest: MessageFns<CreateNewUserRequest> = {
   encode(message: CreateNewUserRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.phoneNumber !== "") {
-      writer.uint32(18).string(message.phoneNumber);
-    }
     if (message.email !== "") {
-      writer.uint32(26).string(message.email);
+      writer.uint32(10).string(message.email);
     }
     if (message.passwordHash !== "") {
-      writer.uint32(42).string(message.passwordHash);
+      writer.uint32(18).string(message.passwordHash);
+    }
+    if (message.phoneNumber !== "") {
+      writer.uint32(26).string(message.phoneNumber);
     }
     if (message.username !== "") {
-      writer.uint32(50).string(message.username);
+      writer.uint32(34).string(message.username);
     }
     return writer;
   },
@@ -114,12 +116,20 @@ export const CreateNewUserRequest: MessageFns<CreateNewUserRequest> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
         case 2: {
           if (tag !== 18) {
             break;
           }
 
-          message.phoneNumber = reader.string();
+          message.passwordHash = reader.string();
           continue;
         }
         case 3: {
@@ -127,19 +137,11 @@ export const CreateNewUserRequest: MessageFns<CreateNewUserRequest> = {
             break;
           }
 
-          message.email = reader.string();
+          message.phoneNumber = reader.string();
           continue;
         }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.passwordHash = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
+        case 4: {
+          if (tag !== 34) {
             break;
           }
 
@@ -157,23 +159,23 @@ export const CreateNewUserRequest: MessageFns<CreateNewUserRequest> = {
 
   fromJSON(object: any): CreateNewUserRequest {
     return {
-      phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : "",
       email: isSet(object.email) ? globalThis.String(object.email) : "",
       passwordHash: isSet(object.passwordHash) ? globalThis.String(object.passwordHash) : "",
+      phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : "",
       username: isSet(object.username) ? globalThis.String(object.username) : "",
     };
   },
 
   toJSON(message: CreateNewUserRequest): unknown {
     const obj: any = {};
-    if (message.phoneNumber !== "") {
-      obj.phoneNumber = message.phoneNumber;
-    }
     if (message.email !== "") {
       obj.email = message.email;
     }
     if (message.passwordHash !== "") {
       obj.passwordHash = message.passwordHash;
+    }
+    if (message.phoneNumber !== "") {
+      obj.phoneNumber = message.phoneNumber;
     }
     if (message.username !== "") {
       obj.username = message.username;
@@ -186,25 +188,22 @@ export const CreateNewUserRequest: MessageFns<CreateNewUserRequest> = {
   },
   fromPartial<I extends Exact<DeepPartial<CreateNewUserRequest>, I>>(object: I): CreateNewUserRequest {
     const message = createBaseCreateNewUserRequest();
-    message.phoneNumber = object.phoneNumber ?? "";
     message.email = object.email ?? "";
     message.passwordHash = object.passwordHash ?? "";
+    message.phoneNumber = object.phoneNumber ?? "";
     message.username = object.username ?? "";
     return message;
   },
 };
 
 function createBaseCreateNewUserResponse(): CreateNewUserResponse {
-  return { message: "", status: 0 };
+  return { info: undefined };
 }
 
 export const CreateNewUserResponse: MessageFns<CreateNewUserResponse> = {
   encode(message: CreateNewUserResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.message !== "") {
-      writer.uint32(10).string(message.message);
-    }
-    if (message.status !== 0) {
-      writer.uint32(16).int32(message.status);
+    if (message.info !== undefined) {
+      ResponseMessage.encode(message.info, writer.uint32(10).fork()).join();
     }
     return writer;
   },
@@ -221,15 +220,7 @@ export const CreateNewUserResponse: MessageFns<CreateNewUserResponse> = {
             break;
           }
 
-          message.message = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.status = reader.int32();
+          message.info = ResponseMessage.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -242,19 +233,13 @@ export const CreateNewUserResponse: MessageFns<CreateNewUserResponse> = {
   },
 
   fromJSON(object: any): CreateNewUserResponse {
-    return {
-      message: isSet(object.message) ? globalThis.String(object.message) : "",
-      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
-    };
+    return { info: isSet(object.info) ? ResponseMessage.fromJSON(object.info) : undefined };
   },
 
   toJSON(message: CreateNewUserResponse): unknown {
     const obj: any = {};
-    if (message.message !== "") {
-      obj.message = message.message;
-    }
-    if (message.status !== 0) {
-      obj.status = Math.round(message.status);
+    if (message.info !== undefined) {
+      obj.info = ResponseMessage.toJSON(message.info);
     }
     return obj;
   },
@@ -264,8 +249,9 @@ export const CreateNewUserResponse: MessageFns<CreateNewUserResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<CreateNewUserResponse>, I>>(object: I): CreateNewUserResponse {
     const message = createBaseCreateNewUserResponse();
-    message.message = object.message ?? "";
-    message.status = object.status ?? 0;
+    message.info = (object.info !== undefined && object.info !== null)
+      ? ResponseMessage.fromPartial(object.info)
+      : undefined;
     return message;
   },
 };
@@ -329,28 +315,16 @@ export const FindUserByIdRequest: MessageFns<FindUserByIdRequest> = {
 };
 
 function createBaseFindUserByIdResponse(): FindUserByIdResponse {
-  return { userId: 0, phoneNumber: "", email: "", tag: "", passwordHash: "", username: "" };
+  return { userData: undefined, notFound: undefined };
 }
 
 export const FindUserByIdResponse: MessageFns<FindUserByIdResponse> = {
   encode(message: FindUserByIdResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.userId !== 0) {
-      writer.uint32(8).int32(message.userId);
+    if (message.userData !== undefined) {
+      UserData.encode(message.userData, writer.uint32(10).fork()).join();
     }
-    if (message.phoneNumber !== "") {
-      writer.uint32(18).string(message.phoneNumber);
-    }
-    if (message.email !== "") {
-      writer.uint32(26).string(message.email);
-    }
-    if (message.tag !== "") {
-      writer.uint32(34).string(message.tag);
-    }
-    if (message.passwordHash !== "") {
-      writer.uint32(42).string(message.passwordHash);
-    }
-    if (message.username !== "") {
-      writer.uint32(50).string(message.username);
+    if (message.notFound !== undefined) {
+      UserNotFoundResponse.encode(message.notFound, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -363,11 +337,11 @@ export const FindUserByIdResponse: MessageFns<FindUserByIdResponse> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 10) {
             break;
           }
 
-          message.userId = reader.int32();
+          message.userData = UserData.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -375,39 +349,7 @@ export const FindUserByIdResponse: MessageFns<FindUserByIdResponse> = {
             break;
           }
 
-          message.phoneNumber = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.email = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.tag = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.passwordHash = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.username = reader.string();
+          message.notFound = UserNotFoundResponse.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -421,34 +363,18 @@ export const FindUserByIdResponse: MessageFns<FindUserByIdResponse> = {
 
   fromJSON(object: any): FindUserByIdResponse {
     return {
-      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
-      phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : "",
-      email: isSet(object.email) ? globalThis.String(object.email) : "",
-      tag: isSet(object.tag) ? globalThis.String(object.tag) : "",
-      passwordHash: isSet(object.passwordHash) ? globalThis.String(object.passwordHash) : "",
-      username: isSet(object.username) ? globalThis.String(object.username) : "",
+      userData: isSet(object.userData) ? UserData.fromJSON(object.userData) : undefined,
+      notFound: isSet(object.notFound) ? UserNotFoundResponse.fromJSON(object.notFound) : undefined,
     };
   },
 
   toJSON(message: FindUserByIdResponse): unknown {
     const obj: any = {};
-    if (message.userId !== 0) {
-      obj.userId = Math.round(message.userId);
+    if (message.userData !== undefined) {
+      obj.userData = UserData.toJSON(message.userData);
     }
-    if (message.phoneNumber !== "") {
-      obj.phoneNumber = message.phoneNumber;
-    }
-    if (message.email !== "") {
-      obj.email = message.email;
-    }
-    if (message.tag !== "") {
-      obj.tag = message.tag;
-    }
-    if (message.passwordHash !== "") {
-      obj.passwordHash = message.passwordHash;
-    }
-    if (message.username !== "") {
-      obj.username = message.username;
+    if (message.notFound !== undefined) {
+      obj.notFound = UserNotFoundResponse.toJSON(message.notFound);
     }
     return obj;
   },
@@ -458,12 +384,12 @@ export const FindUserByIdResponse: MessageFns<FindUserByIdResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<FindUserByIdResponse>, I>>(object: I): FindUserByIdResponse {
     const message = createBaseFindUserByIdResponse();
-    message.userId = object.userId ?? 0;
-    message.phoneNumber = object.phoneNumber ?? "";
-    message.email = object.email ?? "";
-    message.tag = object.tag ?? "";
-    message.passwordHash = object.passwordHash ?? "";
-    message.username = object.username ?? "";
+    message.userData = (object.userData !== undefined && object.userData !== null)
+      ? UserData.fromPartial(object.userData)
+      : undefined;
+    message.notFound = (object.notFound !== undefined && object.notFound !== null)
+      ? UserNotFoundResponse.fromPartial(object.notFound)
+      : undefined;
     return message;
   },
 };
@@ -586,6 +512,714 @@ export const FindUserByUsernameResponse: MessageFns<FindUserByUsernameResponse> 
   },
 };
 
+function createBaseFindUserByTagRequest(): FindUserByTagRequest {
+  return { tag: "" };
+}
+
+export const FindUserByTagRequest: MessageFns<FindUserByTagRequest> = {
+  encode(message: FindUserByTagRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.tag !== "") {
+      writer.uint32(10).string(message.tag);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByTagRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFindUserByTagRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.tag = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FindUserByTagRequest {
+    return { tag: isSet(object.tag) ? globalThis.String(object.tag) : "" };
+  },
+
+  toJSON(message: FindUserByTagRequest): unknown {
+    const obj: any = {};
+    if (message.tag !== "") {
+      obj.tag = message.tag;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FindUserByTagRequest>, I>>(base?: I): FindUserByTagRequest {
+    return FindUserByTagRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FindUserByTagRequest>, I>>(object: I): FindUserByTagRequest {
+    const message = createBaseFindUserByTagRequest();
+    message.tag = object.tag ?? "";
+    return message;
+  },
+};
+
+function createBaseFindUserByTagResponse(): FindUserByTagResponse {
+  return { userData: undefined, notFound: undefined };
+}
+
+export const FindUserByTagResponse: MessageFns<FindUserByTagResponse> = {
+  encode(message: FindUserByTagResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userData !== undefined) {
+      UserData.encode(message.userData, writer.uint32(10).fork()).join();
+    }
+    if (message.notFound !== undefined) {
+      UserNotFoundResponse.encode(message.notFound, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByTagResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFindUserByTagResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.userData = UserData.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.notFound = UserNotFoundResponse.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FindUserByTagResponse {
+    return {
+      userData: isSet(object.userData) ? UserData.fromJSON(object.userData) : undefined,
+      notFound: isSet(object.notFound) ? UserNotFoundResponse.fromJSON(object.notFound) : undefined,
+    };
+  },
+
+  toJSON(message: FindUserByTagResponse): unknown {
+    const obj: any = {};
+    if (message.userData !== undefined) {
+      obj.userData = UserData.toJSON(message.userData);
+    }
+    if (message.notFound !== undefined) {
+      obj.notFound = UserNotFoundResponse.toJSON(message.notFound);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FindUserByTagResponse>, I>>(base?: I): FindUserByTagResponse {
+    return FindUserByTagResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FindUserByTagResponse>, I>>(object: I): FindUserByTagResponse {
+    const message = createBaseFindUserByTagResponse();
+    message.userData = (object.userData !== undefined && object.userData !== null)
+      ? UserData.fromPartial(object.userData)
+      : undefined;
+    message.notFound = (object.notFound !== undefined && object.notFound !== null)
+      ? UserNotFoundResponse.fromPartial(object.notFound)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseFindUserByEmailRequest(): FindUserByEmailRequest {
+  return { email: "" };
+}
+
+export const FindUserByEmailRequest: MessageFns<FindUserByEmailRequest> = {
+  encode(message: FindUserByEmailRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.email !== "") {
+      writer.uint32(10).string(message.email);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByEmailRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFindUserByEmailRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FindUserByEmailRequest {
+    return { email: isSet(object.email) ? globalThis.String(object.email) : "" };
+  },
+
+  toJSON(message: FindUserByEmailRequest): unknown {
+    const obj: any = {};
+    if (message.email !== "") {
+      obj.email = message.email;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FindUserByEmailRequest>, I>>(base?: I): FindUserByEmailRequest {
+    return FindUserByEmailRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FindUserByEmailRequest>, I>>(object: I): FindUserByEmailRequest {
+    const message = createBaseFindUserByEmailRequest();
+    message.email = object.email ?? "";
+    return message;
+  },
+};
+
+function createBaseFindUserByEmailResponse(): FindUserByEmailResponse {
+  return { userData: undefined, notFound: undefined };
+}
+
+export const FindUserByEmailResponse: MessageFns<FindUserByEmailResponse> = {
+  encode(message: FindUserByEmailResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userData !== undefined) {
+      UserData.encode(message.userData, writer.uint32(10).fork()).join();
+    }
+    if (message.notFound !== undefined) {
+      UserNotFoundResponse.encode(message.notFound, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByEmailResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFindUserByEmailResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.userData = UserData.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.notFound = UserNotFoundResponse.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FindUserByEmailResponse {
+    return {
+      userData: isSet(object.userData) ? UserData.fromJSON(object.userData) : undefined,
+      notFound: isSet(object.notFound) ? UserNotFoundResponse.fromJSON(object.notFound) : undefined,
+    };
+  },
+
+  toJSON(message: FindUserByEmailResponse): unknown {
+    const obj: any = {};
+    if (message.userData !== undefined) {
+      obj.userData = UserData.toJSON(message.userData);
+    }
+    if (message.notFound !== undefined) {
+      obj.notFound = UserNotFoundResponse.toJSON(message.notFound);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FindUserByEmailResponse>, I>>(base?: I): FindUserByEmailResponse {
+    return FindUserByEmailResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FindUserByEmailResponse>, I>>(object: I): FindUserByEmailResponse {
+    const message = createBaseFindUserByEmailResponse();
+    message.userData = (object.userData !== undefined && object.userData !== null)
+      ? UserData.fromPartial(object.userData)
+      : undefined;
+    message.notFound = (object.notFound !== undefined && object.notFound !== null)
+      ? UserNotFoundResponse.fromPartial(object.notFound)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseFindUserByPhoneNumberRequest(): FindUserByPhoneNumberRequest {
+  return { phoneNumber: "" };
+}
+
+export const FindUserByPhoneNumberRequest: MessageFns<FindUserByPhoneNumberRequest> = {
+  encode(message: FindUserByPhoneNumberRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.phoneNumber !== "") {
+      writer.uint32(10).string(message.phoneNumber);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByPhoneNumberRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFindUserByPhoneNumberRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.phoneNumber = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FindUserByPhoneNumberRequest {
+    return { phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : "" };
+  },
+
+  toJSON(message: FindUserByPhoneNumberRequest): unknown {
+    const obj: any = {};
+    if (message.phoneNumber !== "") {
+      obj.phoneNumber = message.phoneNumber;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FindUserByPhoneNumberRequest>, I>>(base?: I): FindUserByPhoneNumberRequest {
+    return FindUserByPhoneNumberRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FindUserByPhoneNumberRequest>, I>>(object: I): FindUserByPhoneNumberRequest {
+    const message = createBaseFindUserByPhoneNumberRequest();
+    message.phoneNumber = object.phoneNumber ?? "";
+    return message;
+  },
+};
+
+function createBaseFindUserByPhoneNumberResponse(): FindUserByPhoneNumberResponse {
+  return { userData: undefined, notFound: undefined };
+}
+
+export const FindUserByPhoneNumberResponse: MessageFns<FindUserByPhoneNumberResponse> = {
+  encode(message: FindUserByPhoneNumberResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userData !== undefined) {
+      UserData.encode(message.userData, writer.uint32(10).fork()).join();
+    }
+    if (message.notFound !== undefined) {
+      UserNotFoundResponse.encode(message.notFound, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByPhoneNumberResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFindUserByPhoneNumberResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.userData = UserData.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.notFound = UserNotFoundResponse.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FindUserByPhoneNumberResponse {
+    return {
+      userData: isSet(object.userData) ? UserData.fromJSON(object.userData) : undefined,
+      notFound: isSet(object.notFound) ? UserNotFoundResponse.fromJSON(object.notFound) : undefined,
+    };
+  },
+
+  toJSON(message: FindUserByPhoneNumberResponse): unknown {
+    const obj: any = {};
+    if (message.userData !== undefined) {
+      obj.userData = UserData.toJSON(message.userData);
+    }
+    if (message.notFound !== undefined) {
+      obj.notFound = UserNotFoundResponse.toJSON(message.notFound);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FindUserByPhoneNumberResponse>, I>>(base?: I): FindUserByPhoneNumberResponse {
+    return FindUserByPhoneNumberResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FindUserByPhoneNumberResponse>, I>>(
+    object: I,
+  ): FindUserByPhoneNumberResponse {
+    const message = createBaseFindUserByPhoneNumberResponse();
+    message.userData = (object.userData !== undefined && object.userData !== null)
+      ? UserData.fromPartial(object.userData)
+      : undefined;
+    message.notFound = (object.notFound !== undefined && object.notFound !== null)
+      ? UserNotFoundResponse.fromPartial(object.notFound)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseUserData(): UserData {
+  return { userId: 0, phoneNumber: "", email: "", tag: "", passwordHash: "", username: "" };
+}
+
+export const UserData: MessageFns<UserData> = {
+  encode(message: UserData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.phoneNumber !== "") {
+      writer.uint32(18).string(message.phoneNumber);
+    }
+    if (message.email !== "") {
+      writer.uint32(26).string(message.email);
+    }
+    if (message.tag !== "") {
+      writer.uint32(34).string(message.tag);
+    }
+    if (message.passwordHash !== "") {
+      writer.uint32(42).string(message.passwordHash);
+    }
+    if (message.username !== "") {
+      writer.uint32(50).string(message.username);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserData();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.phoneNumber = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.tag = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.passwordHash = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.username = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UserData {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : "",
+      email: isSet(object.email) ? globalThis.String(object.email) : "",
+      tag: isSet(object.tag) ? globalThis.String(object.tag) : "",
+      passwordHash: isSet(object.passwordHash) ? globalThis.String(object.passwordHash) : "",
+      username: isSet(object.username) ? globalThis.String(object.username) : "",
+    };
+  },
+
+  toJSON(message: UserData): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.phoneNumber !== "") {
+      obj.phoneNumber = message.phoneNumber;
+    }
+    if (message.email !== "") {
+      obj.email = message.email;
+    }
+    if (message.tag !== "") {
+      obj.tag = message.tag;
+    }
+    if (message.passwordHash !== "") {
+      obj.passwordHash = message.passwordHash;
+    }
+    if (message.username !== "") {
+      obj.username = message.username;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UserData>, I>>(base?: I): UserData {
+    return UserData.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UserData>, I>>(object: I): UserData {
+    const message = createBaseUserData();
+    message.userId = object.userId ?? 0;
+    message.phoneNumber = object.phoneNumber ?? "";
+    message.email = object.email ?? "";
+    message.tag = object.tag ?? "";
+    message.passwordHash = object.passwordHash ?? "";
+    message.username = object.username ?? "";
+    return message;
+  },
+};
+
+function createBaseUserNotFoundResponse(): UserNotFoundResponse {
+  return { message: "", status: 0 };
+}
+
+export const UserNotFoundResponse: MessageFns<UserNotFoundResponse> = {
+  encode(message: UserNotFoundResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserNotFoundResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserNotFoundResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UserNotFoundResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
+  },
+
+  toJSON(message: UserNotFoundResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UserNotFoundResponse>, I>>(base?: I): UserNotFoundResponse {
+    return UserNotFoundResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UserNotFoundResponse>, I>>(object: I): UserNotFoundResponse {
+    const message = createBaseUserNotFoundResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
+
+function createBaseResponseMessage(): ResponseMessage {
+  return { message: "", status: 0 };
+}
+
+export const ResponseMessage: MessageFns<ResponseMessage> = {
+  encode(message: ResponseMessage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ResponseMessage {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseResponseMessage();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ResponseMessage {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
+  },
+
+  toJSON(message: ResponseMessage): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ResponseMessage>, I>>(base?: I): ResponseMessage {
+    return ResponseMessage.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ResponseMessage>, I>>(object: I): ResponseMessage {
+    const message = createBaseResponseMessage();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
+
 function createBaseUserArray(): UserArray {
   return { userId: 0, username: "" };
 }
@@ -657,602 +1291,6 @@ export const UserArray: MessageFns<UserArray> = {
   fromPartial<I extends Exact<DeepPartial<UserArray>, I>>(object: I): UserArray {
     const message = createBaseUserArray();
     message.userId = object.userId ?? 0;
-    message.username = object.username ?? "";
-    return message;
-  },
-};
-
-function createBaseFindUserByTagRequest(): FindUserByTagRequest {
-  return { tag: "" };
-}
-
-export const FindUserByTagRequest: MessageFns<FindUserByTagRequest> = {
-  encode(message: FindUserByTagRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.tag !== "") {
-      writer.uint32(10).string(message.tag);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByTagRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseFindUserByTagRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.tag = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): FindUserByTagRequest {
-    return { tag: isSet(object.tag) ? globalThis.String(object.tag) : "" };
-  },
-
-  toJSON(message: FindUserByTagRequest): unknown {
-    const obj: any = {};
-    if (message.tag !== "") {
-      obj.tag = message.tag;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<FindUserByTagRequest>, I>>(base?: I): FindUserByTagRequest {
-    return FindUserByTagRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<FindUserByTagRequest>, I>>(object: I): FindUserByTagRequest {
-    const message = createBaseFindUserByTagRequest();
-    message.tag = object.tag ?? "";
-    return message;
-  },
-};
-
-function createBaseFindUserByTagResponse(): FindUserByTagResponse {
-  return { userId: 0, phoneNumber: "", email: "", tag: "", passwordHash: "", username: "" };
-}
-
-export const FindUserByTagResponse: MessageFns<FindUserByTagResponse> = {
-  encode(message: FindUserByTagResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.userId !== 0) {
-      writer.uint32(8).int32(message.userId);
-    }
-    if (message.phoneNumber !== "") {
-      writer.uint32(18).string(message.phoneNumber);
-    }
-    if (message.email !== "") {
-      writer.uint32(26).string(message.email);
-    }
-    if (message.tag !== "") {
-      writer.uint32(34).string(message.tag);
-    }
-    if (message.passwordHash !== "") {
-      writer.uint32(42).string(message.passwordHash);
-    }
-    if (message.username !== "") {
-      writer.uint32(50).string(message.username);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByTagResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseFindUserByTagResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.userId = reader.int32();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.phoneNumber = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.email = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.tag = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.passwordHash = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.username = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): FindUserByTagResponse {
-    return {
-      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
-      phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : "",
-      email: isSet(object.email) ? globalThis.String(object.email) : "",
-      tag: isSet(object.tag) ? globalThis.String(object.tag) : "",
-      passwordHash: isSet(object.passwordHash) ? globalThis.String(object.passwordHash) : "",
-      username: isSet(object.username) ? globalThis.String(object.username) : "",
-    };
-  },
-
-  toJSON(message: FindUserByTagResponse): unknown {
-    const obj: any = {};
-    if (message.userId !== 0) {
-      obj.userId = Math.round(message.userId);
-    }
-    if (message.phoneNumber !== "") {
-      obj.phoneNumber = message.phoneNumber;
-    }
-    if (message.email !== "") {
-      obj.email = message.email;
-    }
-    if (message.tag !== "") {
-      obj.tag = message.tag;
-    }
-    if (message.passwordHash !== "") {
-      obj.passwordHash = message.passwordHash;
-    }
-    if (message.username !== "") {
-      obj.username = message.username;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<FindUserByTagResponse>, I>>(base?: I): FindUserByTagResponse {
-    return FindUserByTagResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<FindUserByTagResponse>, I>>(object: I): FindUserByTagResponse {
-    const message = createBaseFindUserByTagResponse();
-    message.userId = object.userId ?? 0;
-    message.phoneNumber = object.phoneNumber ?? "";
-    message.email = object.email ?? "";
-    message.tag = object.tag ?? "";
-    message.passwordHash = object.passwordHash ?? "";
-    message.username = object.username ?? "";
-    return message;
-  },
-};
-
-function createBaseFindUserByEmailRequest(): FindUserByEmailRequest {
-  return { email: "" };
-}
-
-export const FindUserByEmailRequest: MessageFns<FindUserByEmailRequest> = {
-  encode(message: FindUserByEmailRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.email !== "") {
-      writer.uint32(10).string(message.email);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByEmailRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseFindUserByEmailRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.email = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): FindUserByEmailRequest {
-    return { email: isSet(object.email) ? globalThis.String(object.email) : "" };
-  },
-
-  toJSON(message: FindUserByEmailRequest): unknown {
-    const obj: any = {};
-    if (message.email !== "") {
-      obj.email = message.email;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<FindUserByEmailRequest>, I>>(base?: I): FindUserByEmailRequest {
-    return FindUserByEmailRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<FindUserByEmailRequest>, I>>(object: I): FindUserByEmailRequest {
-    const message = createBaseFindUserByEmailRequest();
-    message.email = object.email ?? "";
-    return message;
-  },
-};
-
-function createBaseFindUserByEmailResponse(): FindUserByEmailResponse {
-  return { userId: 0, phoneNumber: "", email: "", tag: "", passwordHash: "", username: "" };
-}
-
-export const FindUserByEmailResponse: MessageFns<FindUserByEmailResponse> = {
-  encode(message: FindUserByEmailResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.userId !== 0) {
-      writer.uint32(8).int32(message.userId);
-    }
-    if (message.phoneNumber !== "") {
-      writer.uint32(18).string(message.phoneNumber);
-    }
-    if (message.email !== "") {
-      writer.uint32(26).string(message.email);
-    }
-    if (message.tag !== "") {
-      writer.uint32(34).string(message.tag);
-    }
-    if (message.passwordHash !== "") {
-      writer.uint32(42).string(message.passwordHash);
-    }
-    if (message.username !== "") {
-      writer.uint32(50).string(message.username);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByEmailResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseFindUserByEmailResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.userId = reader.int32();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.phoneNumber = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.email = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.tag = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.passwordHash = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.username = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): FindUserByEmailResponse {
-    return {
-      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
-      phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : "",
-      email: isSet(object.email) ? globalThis.String(object.email) : "",
-      tag: isSet(object.tag) ? globalThis.String(object.tag) : "",
-      passwordHash: isSet(object.passwordHash) ? globalThis.String(object.passwordHash) : "",
-      username: isSet(object.username) ? globalThis.String(object.username) : "",
-    };
-  },
-
-  toJSON(message: FindUserByEmailResponse): unknown {
-    const obj: any = {};
-    if (message.userId !== 0) {
-      obj.userId = Math.round(message.userId);
-    }
-    if (message.phoneNumber !== "") {
-      obj.phoneNumber = message.phoneNumber;
-    }
-    if (message.email !== "") {
-      obj.email = message.email;
-    }
-    if (message.tag !== "") {
-      obj.tag = message.tag;
-    }
-    if (message.passwordHash !== "") {
-      obj.passwordHash = message.passwordHash;
-    }
-    if (message.username !== "") {
-      obj.username = message.username;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<FindUserByEmailResponse>, I>>(base?: I): FindUserByEmailResponse {
-    return FindUserByEmailResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<FindUserByEmailResponse>, I>>(object: I): FindUserByEmailResponse {
-    const message = createBaseFindUserByEmailResponse();
-    message.userId = object.userId ?? 0;
-    message.phoneNumber = object.phoneNumber ?? "";
-    message.email = object.email ?? "";
-    message.tag = object.tag ?? "";
-    message.passwordHash = object.passwordHash ?? "";
-    message.username = object.username ?? "";
-    return message;
-  },
-};
-
-function createBaseFindUserByPhoneNumberRequest(): FindUserByPhoneNumberRequest {
-  return { phoneNumber: "" };
-}
-
-export const FindUserByPhoneNumberRequest: MessageFns<FindUserByPhoneNumberRequest> = {
-  encode(message: FindUserByPhoneNumberRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.phoneNumber !== "") {
-      writer.uint32(10).string(message.phoneNumber);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByPhoneNumberRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseFindUserByPhoneNumberRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.phoneNumber = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): FindUserByPhoneNumberRequest {
-    return { phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : "" };
-  },
-
-  toJSON(message: FindUserByPhoneNumberRequest): unknown {
-    const obj: any = {};
-    if (message.phoneNumber !== "") {
-      obj.phoneNumber = message.phoneNumber;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<FindUserByPhoneNumberRequest>, I>>(base?: I): FindUserByPhoneNumberRequest {
-    return FindUserByPhoneNumberRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<FindUserByPhoneNumberRequest>, I>>(object: I): FindUserByPhoneNumberRequest {
-    const message = createBaseFindUserByPhoneNumberRequest();
-    message.phoneNumber = object.phoneNumber ?? "";
-    return message;
-  },
-};
-
-function createBaseFindUserByPhoneNumberResponse(): FindUserByPhoneNumberResponse {
-  return { userId: 0, phoneNumber: "", email: "", tag: "", passwordHash: "", username: "" };
-}
-
-export const FindUserByPhoneNumberResponse: MessageFns<FindUserByPhoneNumberResponse> = {
-  encode(message: FindUserByPhoneNumberResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.userId !== 0) {
-      writer.uint32(8).int32(message.userId);
-    }
-    if (message.phoneNumber !== "") {
-      writer.uint32(18).string(message.phoneNumber);
-    }
-    if (message.email !== "") {
-      writer.uint32(26).string(message.email);
-    }
-    if (message.tag !== "") {
-      writer.uint32(34).string(message.tag);
-    }
-    if (message.passwordHash !== "") {
-      writer.uint32(42).string(message.passwordHash);
-    }
-    if (message.username !== "") {
-      writer.uint32(50).string(message.username);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): FindUserByPhoneNumberResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseFindUserByPhoneNumberResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.userId = reader.int32();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.phoneNumber = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.email = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.tag = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.passwordHash = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.username = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): FindUserByPhoneNumberResponse {
-    return {
-      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
-      phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : "",
-      email: isSet(object.email) ? globalThis.String(object.email) : "",
-      tag: isSet(object.tag) ? globalThis.String(object.tag) : "",
-      passwordHash: isSet(object.passwordHash) ? globalThis.String(object.passwordHash) : "",
-      username: isSet(object.username) ? globalThis.String(object.username) : "",
-    };
-  },
-
-  toJSON(message: FindUserByPhoneNumberResponse): unknown {
-    const obj: any = {};
-    if (message.userId !== 0) {
-      obj.userId = Math.round(message.userId);
-    }
-    if (message.phoneNumber !== "") {
-      obj.phoneNumber = message.phoneNumber;
-    }
-    if (message.email !== "") {
-      obj.email = message.email;
-    }
-    if (message.tag !== "") {
-      obj.tag = message.tag;
-    }
-    if (message.passwordHash !== "") {
-      obj.passwordHash = message.passwordHash;
-    }
-    if (message.username !== "") {
-      obj.username = message.username;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<FindUserByPhoneNumberResponse>, I>>(base?: I): FindUserByPhoneNumberResponse {
-    return FindUserByPhoneNumberResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<FindUserByPhoneNumberResponse>, I>>(
-    object: I,
-  ): FindUserByPhoneNumberResponse {
-    const message = createBaseFindUserByPhoneNumberResponse();
-    message.userId = object.userId ?? 0;
-    message.phoneNumber = object.phoneNumber ?? "";
-    message.email = object.email ?? "";
-    message.tag = object.tag ?? "";
-    message.passwordHash = object.passwordHash ?? "";
     message.username = object.username ?? "";
     return message;
   },

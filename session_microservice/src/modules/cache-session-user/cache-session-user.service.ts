@@ -13,18 +13,16 @@ import {
     DeleteUserSessionRequest,
     DeleteUserSessionResponse,
 } from '../../protos/proto_gen_files/session_user';
-import Redis from 'ioredis';
-import { ConfigService } from '@nestjs/config';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
+import { redisConfig } from 'src/config/config.redis';
+import Redis from 'ioredis';
 
 @Controller('SessionUserService')
 export class SessionUserService implements UserSessionInterface {
     private redis: Redis;
 
     constructor(
-        private readonly configService: ConfigService,
-
         @InjectMetric('PROM_METRIC_SESSION_SAVE_TOTAL')
         private readonly saveSessionTotal: Counter<string>,
 
@@ -43,10 +41,7 @@ export class SessionUserService implements UserSessionInterface {
         @InjectMetric('PROM_METRIC_SESSION_DELETE_DURATION')
         private readonly deleteSessionDuration: Histogram<string>,
     ) {
-        this.redis = new Redis({
-            host: this.configService.get<string>('redis.host'),
-            port: this.configService.get<number>('redis.port'),
-        });
+        this.redis = new Redis(redisConfig);
     }
 
     @GrpcMethod('SessionUserService', 'SaveUserSession')
@@ -93,7 +88,10 @@ export class SessionUserService implements UserSessionInterface {
         try {
             await this.redis.del(data.userId.toString());
             this.deleteSessionTotal.inc();
-            return { message: 'User session deleted successfully' };
+            return {
+                message: 'User session deleted successfully',
+                status: 200,
+            };
         } catch (error) {
             console.error('Error in DeleteUserSession:', error);
             throw new InternalServerErrorException('Server have problem');

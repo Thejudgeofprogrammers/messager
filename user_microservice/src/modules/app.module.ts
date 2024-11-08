@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
-import configuration from '../config/config.main';
-import { PrismaModule } from './prisma/prisma.module';
+// import { PrismaModule } from './prisma/prisma.module';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import configuration from '../config/config.main';
 
 @Module({
     imports: [
@@ -18,7 +18,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
             load: [configuration],
         }),
         UserModule,
-        PrismaModule,
+        // PrismaModule,
     ],
 })
 export class AppModule {}
