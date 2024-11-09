@@ -1,10 +1,5 @@
-import {
-    Injectable,
-    InternalServerErrorException,
-    NotFoundException,
-    OnModuleInit,
-} from '@nestjs/common';
-import { Client, ClientGrpc } from '@nestjs/microservices';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Client, ClientGrpc, RpcException } from '@nestjs/microservices';
 import { from, lastValueFrom } from 'rxjs';
 import {
     UserService as UserServiceClient,
@@ -21,6 +16,8 @@ import {
     UserData,
 } from 'src/protos/proto_gen_files/user';
 import { grpcClientOptionsUser } from 'src/config/grpc/grpc.options';
+import { StatusClient } from 'src/common/status';
+import { errMessages } from 'src/common/messages';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -58,17 +55,24 @@ export class UserService implements OnModuleInit {
             );
 
             if (!userInfo.userData) {
-                throw new NotFoundException('User not found');
+                throw new NotFoundException(errMessages.notFound.user);
             }
 
             const userWithoutPassword = this.validateUser(userInfo.userData);
 
             return userWithoutPassword;
         } catch (e) {
-            console.error('Error in UserService.findUserById:', e);
-            throw new InternalServerErrorException(
-                `Server have problem: ${e.message}`,
-            );
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.findUserById,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
         }
     }
 
@@ -81,14 +85,24 @@ export class UserService implements OnModuleInit {
             );
 
             if (!userInfo.userData) {
-                throw new NotFoundException('User not found');
+                throw new NotFoundException(errMessages.notFound.user);
             }
 
             const userWithoutPassword = this.validateUser(userInfo.userData);
 
             return { userData: userWithoutPassword };
         } catch (e) {
-            throw new InternalServerErrorException(`Server have problem: ${e}`);
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.findByTag,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
         }
     }
 
@@ -105,14 +119,24 @@ export class UserService implements OnModuleInit {
             );
 
             if (!userInfo) {
-                throw new NotFoundException('User not found');
+                throw new NotFoundException(errMessages.notFound.user);
             }
 
             const userWithoutPassword = this.validateUser(userInfo.userData);
 
             return { userData: userWithoutPassword };
         } catch (e) {
-            throw new InternalServerErrorException(`Server have problem: ${e}`);
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.findByPhone,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
         }
     }
 
@@ -129,14 +153,24 @@ export class UserService implements OnModuleInit {
             );
 
             if (!userInfo) {
-                throw new NotFoundException('User not found');
+                throw new NotFoundException(errMessages.notFound.user);
             }
 
             const userWithoutPassword = this.validateUser(userInfo.userData);
 
             return userWithoutPassword;
         } catch (e) {
-            throw new InternalServerErrorException(`Server have problem: ${e}`);
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.findByEmail,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
         }
     }
 
@@ -153,12 +187,22 @@ export class UserService implements OnModuleInit {
             );
 
             if (!userInfo) {
-                throw new NotFoundException('User not found');
+                throw new NotFoundException(errMessages.notFound.user);
             }
 
             return userInfo;
         } catch (e) {
-            throw new InternalServerErrorException(`Server have problem: ${e}`);
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.findByUsername,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
         }
     }
 }

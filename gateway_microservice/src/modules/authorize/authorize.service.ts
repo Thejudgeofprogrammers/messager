@@ -9,7 +9,7 @@ import {
     LoginResponse,
     RegisterRequest,
 } from 'src/protos/proto_gen_files/auth';
-import { Client, ClientGrpc } from '@nestjs/microservices';
+import { Client, ClientGrpc, RpcException } from '@nestjs/microservices';
 import { from, lastValueFrom } from 'rxjs';
 import {
     grpcClientOptionsUser,
@@ -23,6 +23,8 @@ import {
 import { grpcClientOptionsSessionUser } from 'src/config/grpc/grpc.options';
 import { SessionUserService } from 'src/protos/proto_gen_files/session_user';
 import { LoginFormDTO } from './dto';
+import { StatusClient } from 'src/common/status';
+import { errMessages } from 'src/common/messages';
 
 @Injectable()
 export class AuthorizeService implements OnModuleInit {
@@ -188,20 +190,34 @@ export class AuthorizeService implements OnModuleInit {
         message: string;
         status: number;
     }> {
-        if (!userId) {
-            throw new BadRequestException('UserId is missing');
+        try {
+            if (!userId) {
+                throw new BadRequestException('UserId is missing');
+            }
+
+            const userData = await lastValueFrom(
+                from(
+                    this.sessionUserMicroservice.DeleteUserSession({
+                        userId,
+                        jwtToken,
+                    }),
+                ),
+            );
+
+            return { message: userData.message, status: userData.status };
+        } catch (e) {
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.logout,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
         }
-
-        const userData = await lastValueFrom(
-            from(
-                this.sessionUserMicroservice.DeleteUserSession({
-                    userId,
-                    jwtToken,
-                }),
-            ),
-        );
-
-        return { message: userData.message, status: 200 };
     }
 
     classifyInput(input: string): string {
