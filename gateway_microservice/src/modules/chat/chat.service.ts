@@ -21,6 +21,8 @@ import {
     UpdateChatByIdResponse,
 } from 'src/protos/proto_gen_files/chat';
 import { RpcException } from '@nestjs/microservices';
+import { errMessages } from 'src/common/messages';
+import { StatusClient } from 'src/common/status';
 
 @Injectable()
 export class ChatService implements ChatInterface, OnModuleInit {
@@ -41,14 +43,14 @@ export class ChatService implements ChatInterface, OnModuleInit {
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
-                    message: 'Ошибка подключения к gRPC-серверу',
+                    message: StatusClient.RPC_EXCEPTION.message,
                     code: e.code,
                 });
             }
 
             throw new RpcException({
-                message: 'Произошла ошибка при создании чата',
-                code: 500,
+                message: errMessages.createNewChat,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
             });
         }
     }
@@ -61,14 +63,14 @@ export class ChatService implements ChatInterface, OnModuleInit {
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
-                    message: 'Ошибка подключения к gRPC-серверу',
+                    message: StatusClient.RPC_EXCEPTION.message,
                     code: e.code,
                 });
             }
 
             throw new RpcException({
-                message: 'Произошла ошибка при создании чата',
-                code: 500,
+                message: errMessages.getChatById,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
             });
         }
     }
@@ -80,14 +82,14 @@ export class ChatService implements ChatInterface, OnModuleInit {
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
-                    message: 'Ошибка подключения к gRPC-серверу',
+                    message: StatusClient.RPC_EXCEPTION.message,
                     code: e.code,
                 });
             }
 
             throw new RpcException({
-                message: 'Произошла ошибка при создании чата',
-                code: 500,
+                message: errMessages.getChatByChatName,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
             });
         }
     }
@@ -99,14 +101,14 @@ export class ChatService implements ChatInterface, OnModuleInit {
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
-                    message: 'Ошибка подключения к gRPC-серверу',
+                    message: StatusClient.RPC_EXCEPTION.message,
                     code: e.code,
                 });
             }
 
             throw new RpcException({
-                message: 'Произошла ошибка при создании чата',
-                code: 500,
+                message: errMessages.updateChatById,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
             });
         }
     }
@@ -118,14 +120,14 @@ export class ChatService implements ChatInterface, OnModuleInit {
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
-                    message: 'Ошибка подключения к gRPC-серверу',
+                    message: StatusClient.RPC_EXCEPTION.message,
                     code: e.code,
                 });
             }
 
             throw new RpcException({
-                message: 'Произошла ошибка при создании чата',
-                code: 500,
+                message: errMessages.deleteChatById,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
             });
         }
     }
@@ -137,14 +139,14 @@ export class ChatService implements ChatInterface, OnModuleInit {
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
-                    message: 'Ошибка подключения к gRPC-серверу',
+                    message: StatusClient.RPC_EXCEPTION.message,
                     code: e.code,
                 });
             }
 
             throw new RpcException({
-                message: 'Произошла ошибка при создании чата',
-                code: 500,
+                message: errMessages.getAllChats,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
             });
         }
     }
@@ -156,14 +158,14 @@ export class ChatService implements ChatInterface, OnModuleInit {
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
-                    message: 'Ошибка подключения к gRPC-серверу',
+                    message: StatusClient.RPC_EXCEPTION.message,
                     code: e.code,
                 });
             }
 
             throw new RpcException({
-                message: 'Произошла ошибка при создании чата',
-                code: 500,
+                message: errMessages.addUserToChat,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
             });
         }
     }
@@ -175,14 +177,14 @@ export class ChatService implements ChatInterface, OnModuleInit {
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
-                    message: 'Ошибка подключения к gRPC-серверу',
+                    message: StatusClient.RPC_EXCEPTION.message,
                     code: e.code,
                 });
             }
 
             throw new RpcException({
-                message: 'Произошла ошибка при создании чата',
-                code: 500,
+                message: errMessages.removeUserFromChat,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
             });
         }
     }

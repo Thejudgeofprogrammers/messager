@@ -1,13 +1,14 @@
 import {
     Injectable,
     NestMiddleware,
-    UnauthorizedException,
     OnModuleInit,
     Inject,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { Request, Response, NextFunction } from 'express';
 import { from, lastValueFrom } from 'rxjs';
+import { errMessages } from 'src/common/messages';
+import { StatusClient } from 'src/common/status';
 import { SessionUserService } from 'src/protos/proto_gen_files/session_user';
 
 @Injectable()
@@ -34,7 +35,11 @@ export class SessionMiddleware implements NestMiddleware, OnModuleInit {
         const { userId, jwtToken } = req.cookies;
 
         if (!userId || !jwtToken) {
-            throw new UnauthorizedException('No authentication data provided');
+            return res
+                .json({
+                    message: StatusClient.HTTP_STATUS_UNAUTHORIZED.message,
+                })
+                .status(StatusClient.HTTP_STATUS_UNAUTHORIZED.status);
         }
 
         try {
@@ -49,10 +54,18 @@ export class SessionMiddleware implements NestMiddleware, OnModuleInit {
             if (response.jwtToken === jwtToken) {
                 return next();
             } else {
-                throw new UnauthorizedException('Invalid session');
+                return res
+                    .json({
+                        message: errMessages.use.sessionInvalid,
+                    })
+                    .status(StatusClient.HTTP_STATUS_UNAUTHORIZED.status);
             }
         } catch (e) {
-            throw new UnauthorizedException('Failed to validate session');
+            return res
+                .json({
+                    message: errMessages.use.sessionValidate,
+                })
+                .status(StatusClient.HTTP_STATUS_UNAUTHORIZED.status);
         }
     }
 }

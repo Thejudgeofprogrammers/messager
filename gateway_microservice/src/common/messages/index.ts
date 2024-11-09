@@ -1,7 +1,7 @@
 export const errMessages = {
-    registry: 'Произошла ошибка при регистрации пользователя',
-    login: 'Произошла ошибка при попытке войти в систему',
-    logout: 'Произошла ошибка при выходе из системы',
+    registry: 'Occurred when user registration failed',
+    login: 'An error occurred while trying to login',
+    logout: 'An error occurred while logout',
 
     findByUsername: 'Error in findUserByUsername',
     findByEmail: 'Error in findUserByEmail',
@@ -16,5 +16,15 @@ export const errMessages = {
     deleteChatById: 'Error occurred while deleting chat by ID',
     getAllChats: 'Error occurred while fetching all chats',
     addUserToChat: 'Error occurred while adding user to chat',
-    RemoveUserFromChat: 'Error occurred while removing user from chat',
+    removeUserFromChat: 'Error occurred while removing user from chat',
+
+    use: {
+        sessionInvalid: 'Invalid session',
+        sessionValidate: 'Failed to validate session',
+    },
+
+    notFound: {
+        user: 'User not found',
+        chat: 'Chat not found',
+    },
 };
