@@ -14,13 +14,19 @@ import {
     FindUserByUsernameResponse,
     FindUserByTagResponse,
     UserData,
+    AddChatToUserRequest,
+    AddChatToUserResponse,
+    RemoveChatFromUserRequest,
+    RemoveChatFromUserResponse,
 } from 'src/protos/proto_gen_files/user';
 import { grpcClientOptionsUser } from 'src/config/grpc/grpc.options';
 import { StatusClient } from 'src/common/status';
 import { errMessages } from 'src/common/messages';
 
+type UserServiceType = Omit<UserServiceClient, 'CreateNewUser'>;
+
 @Injectable()
-export class UserService implements OnModuleInit {
+export class UserService implements OnModuleInit, UserServiceType {
     @Client(grpcClientOptionsUser)
     private readonly userClient: ClientGrpc;
 
@@ -42,7 +48,73 @@ export class UserService implements OnModuleInit {
         return validateUser;
     }
 
-    async findUserById(
+    async AddChatToUser(
+        payload: AddChatToUserRequest,
+    ): Promise<AddChatToUserResponse> {
+        try {
+            const addChat = await lastValueFrom(
+                from(
+                    this.userMicroservice.AddChatToUser({
+                        chatId: payload.chatId,
+                        userId: payload.userId,
+                    }),
+                ),
+            );
+
+            if (!addChat) {
+                throw new NotFoundException(errMessages.notFound.user);
+            }
+
+            return addChat;
+        } catch (e) {
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.findUserById,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
+        }
+    }
+
+    async RemoveChatFromUser(
+        payload: RemoveChatFromUserRequest,
+    ): Promise<RemoveChatFromUserResponse> {
+        try {
+            const addChat = await lastValueFrom(
+                from(
+                    this.userMicroservice.RemoveChatFromUser({
+                        chatId: payload.chatId,
+                        userId: payload.userId,
+                    }),
+                ),
+            );
+
+            if (!addChat) {
+                throw new NotFoundException(errMessages.notFound.user);
+            }
+
+            return addChat;
+        } catch (e) {
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.findUserById,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
+        }
+    }
+
+    async FindUserById(
         payload: FindUserByIdRequest,
     ): Promise<Omit<FindUserByIdResponse, 'passwordHash'>> {
         try {
@@ -76,7 +148,7 @@ export class UserService implements OnModuleInit {
         }
     }
 
-    async findUserByTag(
+    async FindUserByTag(
         payload: FindUserByTagRequest,
     ): Promise<Omit<FindUserByTagResponse, 'passwordHash'>> {
         try {
@@ -106,7 +178,7 @@ export class UserService implements OnModuleInit {
         }
     }
 
-    async findUserByPhone(
+    async FindUserByPhoneNumber(
         payload: FindUserByPhoneNumberRequest,
     ): Promise<Omit<FindUserByPhoneNumberResponse, 'userData.passwordHash'>> {
         try {
@@ -140,7 +212,7 @@ export class UserService implements OnModuleInit {
         }
     }
 
-    async findUserByEmail(
+    async FindUserByEmail(
         payload: FindUserByEmailRequest,
     ): Promise<Omit<FindUserByEmailResponse, 'passwordHash'>> {
         try {
@@ -174,7 +246,7 @@ export class UserService implements OnModuleInit {
         }
     }
 
-    async findUserByUsername(
+    async FindUserByUsername(
         payload: FindUserByUsernameRequest,
     ): Promise<FindUserByUsernameResponse> {
         try {

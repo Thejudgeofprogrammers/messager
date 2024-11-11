@@ -8,5 +8,6 @@ import { prometheusProvidersUser } from 'src/config/metrics/metrics.prometheus_u
     imports: [PrometheusModule],
     controllers: [UserController],
     providers: [UserService, ...prometheusProvidersUser],
+    exports: [UserService],
 })
 export class UserModule {}

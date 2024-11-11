@@ -4,6 +4,7 @@ import { AuthorizeModule } from './authorize/authorize.module';
 import { SessionModule } from './session/session.module';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { UserModule } from './user/user.module';
+import { ChatModule } from './chat/chat.module';
 import configuration from '../config/config.main';
 
 @Module({
@@ -19,6 +20,7 @@ import configuration from '../config/config.main';
             load: [configuration],
         }),
         UserModule,
+        ChatModule,
         AuthorizeModule,
         SessionModule,
     ],

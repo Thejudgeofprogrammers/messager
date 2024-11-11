@@ -9,6 +9,24 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "user";
 
+export interface AddChatToUserRequest {
+  userId: number;
+  chatId: string;
+}
+
+export interface AddChatToUserResponse {
+  info: ResponseMessage | undefined;
+}
+
+export interface RemoveChatFromUserRequest {
+  userId: number;
+  chatId: string;
+}
+
+export interface RemoveChatFromUserResponse {
+  info: ResponseMessage | undefined;
+}
+
 export interface CreateNewUserRequest {
   email: string;
   passwordHash: string;
@@ -25,8 +43,18 @@ export interface FindUserByIdRequest {
 }
 
 export interface FindUserByIdResponse {
-  userData?: UserData | undefined;
+  userData?: UserDataId | undefined;
   notFound?: UserNotFoundResponse | undefined;
+}
+
+export interface UserDataId {
+  userId: number;
+  phoneNumber: string;
+  email: string;
+  tag: string;
+  passwordHash: string;
+  username: string;
+  chatReferences: string[];
 }
 
 export interface FindUserByUsernameRequest {
@@ -87,6 +115,278 @@ export interface UserArray {
   userId: number;
   username: string;
 }
+
+function createBaseAddChatToUserRequest(): AddChatToUserRequest {
+  return { userId: 0, chatId: "" };
+}
+
+export const AddChatToUserRequest: MessageFns<AddChatToUserRequest> = {
+  encode(message: AddChatToUserRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.chatId !== "") {
+      writer.uint32(18).string(message.chatId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AddChatToUserRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAddChatToUserRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.chatId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AddChatToUserRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      chatId: isSet(object.chatId) ? globalThis.String(object.chatId) : "",
+    };
+  },
+
+  toJSON(message: AddChatToUserRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.chatId !== "") {
+      obj.chatId = message.chatId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AddChatToUserRequest>, I>>(base?: I): AddChatToUserRequest {
+    return AddChatToUserRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AddChatToUserRequest>, I>>(object: I): AddChatToUserRequest {
+    const message = createBaseAddChatToUserRequest();
+    message.userId = object.userId ?? 0;
+    message.chatId = object.chatId ?? "";
+    return message;
+  },
+};
+
+function createBaseAddChatToUserResponse(): AddChatToUserResponse {
+  return { info: undefined };
+}
+
+export const AddChatToUserResponse: MessageFns<AddChatToUserResponse> = {
+  encode(message: AddChatToUserResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.info !== undefined) {
+      ResponseMessage.encode(message.info, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AddChatToUserResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAddChatToUserResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.info = ResponseMessage.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AddChatToUserResponse {
+    return { info: isSet(object.info) ? ResponseMessage.fromJSON(object.info) : undefined };
+  },
+
+  toJSON(message: AddChatToUserResponse): unknown {
+    const obj: any = {};
+    if (message.info !== undefined) {
+      obj.info = ResponseMessage.toJSON(message.info);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AddChatToUserResponse>, I>>(base?: I): AddChatToUserResponse {
+    return AddChatToUserResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AddChatToUserResponse>, I>>(object: I): AddChatToUserResponse {
+    const message = createBaseAddChatToUserResponse();
+    message.info = (object.info !== undefined && object.info !== null)
+      ? ResponseMessage.fromPartial(object.info)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseRemoveChatFromUserRequest(): RemoveChatFromUserRequest {
+  return { userId: 0, chatId: "" };
+}
+
+export const RemoveChatFromUserRequest: MessageFns<RemoveChatFromUserRequest> = {
+  encode(message: RemoveChatFromUserRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.chatId !== "") {
+      writer.uint32(18).string(message.chatId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RemoveChatFromUserRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRemoveChatFromUserRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.chatId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RemoveChatFromUserRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      chatId: isSet(object.chatId) ? globalThis.String(object.chatId) : "",
+    };
+  },
+
+  toJSON(message: RemoveChatFromUserRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.chatId !== "") {
+      obj.chatId = message.chatId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RemoveChatFromUserRequest>, I>>(base?: I): RemoveChatFromUserRequest {
+    return RemoveChatFromUserRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RemoveChatFromUserRequest>, I>>(object: I): RemoveChatFromUserRequest {
+    const message = createBaseRemoveChatFromUserRequest();
+    message.userId = object.userId ?? 0;
+    message.chatId = object.chatId ?? "";
+    return message;
+  },
+};
+
+function createBaseRemoveChatFromUserResponse(): RemoveChatFromUserResponse {
+  return { info: undefined };
+}
+
+export const RemoveChatFromUserResponse: MessageFns<RemoveChatFromUserResponse> = {
+  encode(message: RemoveChatFromUserResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.info !== undefined) {
+      ResponseMessage.encode(message.info, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RemoveChatFromUserResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRemoveChatFromUserResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.info = ResponseMessage.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RemoveChatFromUserResponse {
+    return { info: isSet(object.info) ? ResponseMessage.fromJSON(object.info) : undefined };
+  },
+
+  toJSON(message: RemoveChatFromUserResponse): unknown {
+    const obj: any = {};
+    if (message.info !== undefined) {
+      obj.info = ResponseMessage.toJSON(message.info);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RemoveChatFromUserResponse>, I>>(base?: I): RemoveChatFromUserResponse {
+    return RemoveChatFromUserResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RemoveChatFromUserResponse>, I>>(object: I): RemoveChatFromUserResponse {
+    const message = createBaseRemoveChatFromUserResponse();
+    message.info = (object.info !== undefined && object.info !== null)
+      ? ResponseMessage.fromPartial(object.info)
+      : undefined;
+    return message;
+  },
+};
 
 function createBaseCreateNewUserRequest(): CreateNewUserRequest {
   return { email: "", passwordHash: "", phoneNumber: "", username: "" };
@@ -321,7 +621,7 @@ function createBaseFindUserByIdResponse(): FindUserByIdResponse {
 export const FindUserByIdResponse: MessageFns<FindUserByIdResponse> = {
   encode(message: FindUserByIdResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.userData !== undefined) {
-      UserData.encode(message.userData, writer.uint32(10).fork()).join();
+      UserDataId.encode(message.userData, writer.uint32(10).fork()).join();
     }
     if (message.notFound !== undefined) {
       UserNotFoundResponse.encode(message.notFound, writer.uint32(18).fork()).join();
@@ -341,7 +641,7 @@ export const FindUserByIdResponse: MessageFns<FindUserByIdResponse> = {
             break;
           }
 
-          message.userData = UserData.decode(reader, reader.uint32());
+          message.userData = UserDataId.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -363,7 +663,7 @@ export const FindUserByIdResponse: MessageFns<FindUserByIdResponse> = {
 
   fromJSON(object: any): FindUserByIdResponse {
     return {
-      userData: isSet(object.userData) ? UserData.fromJSON(object.userData) : undefined,
+      userData: isSet(object.userData) ? UserDataId.fromJSON(object.userData) : undefined,
       notFound: isSet(object.notFound) ? UserNotFoundResponse.fromJSON(object.notFound) : undefined,
     };
   },
@@ -371,7 +671,7 @@ export const FindUserByIdResponse: MessageFns<FindUserByIdResponse> = {
   toJSON(message: FindUserByIdResponse): unknown {
     const obj: any = {};
     if (message.userData !== undefined) {
-      obj.userData = UserData.toJSON(message.userData);
+      obj.userData = UserDataId.toJSON(message.userData);
     }
     if (message.notFound !== undefined) {
       obj.notFound = UserNotFoundResponse.toJSON(message.notFound);
@@ -385,11 +685,169 @@ export const FindUserByIdResponse: MessageFns<FindUserByIdResponse> = {
   fromPartial<I extends Exact<DeepPartial<FindUserByIdResponse>, I>>(object: I): FindUserByIdResponse {
     const message = createBaseFindUserByIdResponse();
     message.userData = (object.userData !== undefined && object.userData !== null)
-      ? UserData.fromPartial(object.userData)
+      ? UserDataId.fromPartial(object.userData)
       : undefined;
     message.notFound = (object.notFound !== undefined && object.notFound !== null)
       ? UserNotFoundResponse.fromPartial(object.notFound)
       : undefined;
+    return message;
+  },
+};
+
+function createBaseUserDataId(): UserDataId {
+  return { userId: 0, phoneNumber: "", email: "", tag: "", passwordHash: "", username: "", chatReferences: [] };
+}
+
+export const UserDataId: MessageFns<UserDataId> = {
+  encode(message: UserDataId, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.phoneNumber !== "") {
+      writer.uint32(18).string(message.phoneNumber);
+    }
+    if (message.email !== "") {
+      writer.uint32(26).string(message.email);
+    }
+    if (message.tag !== "") {
+      writer.uint32(34).string(message.tag);
+    }
+    if (message.passwordHash !== "") {
+      writer.uint32(42).string(message.passwordHash);
+    }
+    if (message.username !== "") {
+      writer.uint32(50).string(message.username);
+    }
+    for (const v of message.chatReferences) {
+      writer.uint32(58).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserDataId {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserDataId();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.phoneNumber = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.tag = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.passwordHash = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.username = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.chatReferences.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UserDataId {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      phoneNumber: isSet(object.phoneNumber) ? globalThis.String(object.phoneNumber) : "",
+      email: isSet(object.email) ? globalThis.String(object.email) : "",
+      tag: isSet(object.tag) ? globalThis.String(object.tag) : "",
+      passwordHash: isSet(object.passwordHash) ? globalThis.String(object.passwordHash) : "",
+      username: isSet(object.username) ? globalThis.String(object.username) : "",
+      chatReferences: globalThis.Array.isArray(object?.chatReferences)
+        ? object.chatReferences.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: UserDataId): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.phoneNumber !== "") {
+      obj.phoneNumber = message.phoneNumber;
+    }
+    if (message.email !== "") {
+      obj.email = message.email;
+    }
+    if (message.tag !== "") {
+      obj.tag = message.tag;
+    }
+    if (message.passwordHash !== "") {
+      obj.passwordHash = message.passwordHash;
+    }
+    if (message.username !== "") {
+      obj.username = message.username;
+    }
+    if (message.chatReferences?.length) {
+      obj.chatReferences = message.chatReferences;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UserDataId>, I>>(base?: I): UserDataId {
+    return UserDataId.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UserDataId>, I>>(object: I): UserDataId {
+    const message = createBaseUserDataId();
+    message.userId = object.userId ?? 0;
+    message.phoneNumber = object.phoneNumber ?? "";
+    message.email = object.email ?? "";
+    message.tag = object.tag ?? "";
+    message.passwordHash = object.passwordHash ?? "";
+    message.username = object.username ?? "";
+    message.chatReferences = object.chatReferences?.map((e) => e) || [];
     return message;
   },
 };
@@ -1302,6 +1760,7 @@ export interface UserService {
   FindUserByUsername(request: FindUserByUsernameRequest): Promise<FindUserByUsernameResponse>;
   FindUserByTag(request: FindUserByTagRequest): Promise<FindUserByTagResponse>;
   FindUserByEmail(request: FindUserByEmailRequest): Promise<FindUserByEmailResponse>;
+  FindUserByPhoneNumber(request: FindUserByPhoneNumberRequest): Promise<FindUserByPhoneNumberResponse>;
   /**
    * rpc FindUserProfile (FindUserProfileRequest) returns (FindUserProfileResponse);
    * rpc FindUserAvatars (FindUserAvatarsRequest) returns (FindUserAvatarsResponse);
@@ -1310,7 +1769,8 @@ export interface UserService {
    * rpc AddAvatarToUser (AddAvatarToUserRequest) returns (AddAvatarToUserResponse);
    * rpc DeleteAvatarUser (DeleteAvatarUserRequest) returns (DeleteAvatarUserResponse);
    */
-  FindUserByPhoneNumber(request: FindUserByPhoneNumberRequest): Promise<FindUserByPhoneNumberResponse>;
+  AddChatToUser(request: AddChatToUserRequest): Promise<AddChatToUserResponse>;
+  RemoveChatFromUser(request: RemoveChatFromUserRequest): Promise<RemoveChatFromUserResponse>;
 }
 
 export const UserServiceServiceName = "user.UserService";
@@ -1326,6 +1786,8 @@ export class UserServiceClientImpl implements UserService {
     this.FindUserByTag = this.FindUserByTag.bind(this);
     this.FindUserByEmail = this.FindUserByEmail.bind(this);
     this.FindUserByPhoneNumber = this.FindUserByPhoneNumber.bind(this);
+    this.AddChatToUser = this.AddChatToUser.bind(this);
+    this.RemoveChatFromUser = this.RemoveChatFromUser.bind(this);
   }
   CreateNewUser(request: CreateNewUserRequest): Promise<CreateNewUserResponse> {
     const data = CreateNewUserRequest.encode(request).finish();
@@ -1361,6 +1823,18 @@ export class UserServiceClientImpl implements UserService {
     const data = FindUserByPhoneNumberRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "FindUserByPhoneNumber", data);
     return promise.then((data) => FindUserByPhoneNumberResponse.decode(new BinaryReader(data)));
+  }
+
+  AddChatToUser(request: AddChatToUserRequest): Promise<AddChatToUserResponse> {
+    const data = AddChatToUserRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "AddChatToUser", data);
+    return promise.then((data) => AddChatToUserResponse.decode(new BinaryReader(data)));
+  }
+
+  RemoveChatFromUser(request: RemoveChatFromUserRequest): Promise<RemoveChatFromUserResponse> {
+    const data = RemoveChatFromUserRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "RemoveChatFromUser", data);
+    return promise.then((data) => RemoveChatFromUserResponse.decode(new BinaryReader(data)));
   }
 }
 

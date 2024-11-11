@@ -2,17 +2,17 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { LastMessage } from '../dto';
 
-export type ChatDocument = Chat & Document;
+export type ChatDocument = Chat &
+    Document & { createdAt: Date; updatedAt: Date };
 
 @Schema({ timestamps: true })
 export class Chat {
     @Prop({ type: String })
-    chatName: string; // Имя чата (если групповой)
+    chatName: string;
 
     @Prop({ type: String, required: true })
-    chatType: string; // Тип чата: 'group' или 'private'
+    chatType: string;
 
-    // Последнее сообщение
     @Prop({
         type: {
             message_id: Types.ObjectId,
@@ -22,13 +22,10 @@ export class Chat {
     })
     lastMessage: LastMessage;
 
-    @Prop({ type: [Types.ObjectId], ref: 'ChatParticipant' }) // Список участников ссылается на коллекцию ChatParticipant
+    @Prop({ type: [Types.ObjectId], ref: 'ChatParticipant' })
     participants: Types.ObjectId[];
 
-    @Prop({ type: Date })
-    createdAt: Date;
-
-    @Prop({ type: [Types.ObjectId], ref: 'Message', default: [] }) // Сообщения ссылаются на коллекцию Message
+    @Prop({ type: [Types.ObjectId], ref: 'Message', default: [] })
     messages: Types.ObjectId[];
 }
 

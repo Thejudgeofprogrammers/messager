@@ -11,16 +11,17 @@ service ChatService {
     rpc GetChatByChatName(GetChatByChatNameRequest) returns (GetChatByChatNameResponse);
     rpc UpdateChatById(UpdateChatByIdRequest) returns (UpdateChatByIdResponse);
     rpc DeleteChatById(DeleteChatByIdRequest) returns (DeleteChatByIdResponse);
-    rpc GetAllChats(GetAllChatsRequest) returns (GetAllChatsResponse);
     rpc AddUserToChat(AddUserToChatRequest) returns (AddUserToChatResponse);
     rpc RemoveUserFromChat(RemoveUserFromChatRequest) returns (RemoveUserFromChatResponse);
+    rpc LoadToChat(LoadToChatRequest) returns (LoadToChatResponse);
+    rpc LeaveFromChat(LeaveFromChatRequest) returns (LeaveFromChatResponse);
 }
 
 // Запрос на создание нового чата
 message CreateNewChatRequest {
     string chatName = 1;
     string chatType = 2;
-    int32 userId = 3;
+    int32 user_id = 3;
 }
 
 // Ответ на создание нового чата
@@ -48,18 +49,20 @@ message GetChatByChatNameRequest {
 
 // Ответ для получения чата по имени
 message GetChatByChatNameResponse {
-    oneof result {
-        Chat chat_data = 1;
-        ErrorResponse not_found = 2;
-    }
+    repeated ChatIds chat_data = 1;
+}
+
+message ChatIds {
+    string chat_id = 1;
+    string chatName = 2;
 }
 
 // Запрос для обновления чата по ID
 message UpdateChatByIdRequest {
     string chat_id = 1;
-    string chatName = 2;
-    string chatType = 3;
-    LastMessage lastMessage = 4;
+    optional string chatName = 2;
+    optional string chatType = 3;
+    optional string description = 4;
 }
 
 // Ответ для обновления чата по ID
@@ -75,16 +78,6 @@ message DeleteChatByIdRequest {
 // Ответ для удаления чата по ID
 message DeleteChatByIdResponse {
     GenericResponse response = 1;
-}
-
-// Запрос для получения всех чатов
-message GetAllChatsRequest {
-    int32 user_id = 1;
-}
-
-// Ответ для получения всех чатов
-message GetAllChatsResponse {
-    repeated Chat chats = 1;
 }
 
 // Запрос для добавления пользователя в чат
@@ -106,6 +99,24 @@ message RemoveUserFromChatRequest {
 
 // Ответ для удаления пользователя из чата
 message RemoveUserFromChatResponse {
+    GenericResponse response = 1;
+}
+
+message LoadToChatRequest {
+    string chat_id = 1;
+    int32 user_id = 2;
+}
+
+message LoadToChatResponse {
+    GenericResponse response = 1;
+}
+
+message LeaveFromChatRequest {
+    string chat_id = 1;
+    int32 user_id = 2;
+}
+
+message LeaveFromChatResponse {
     GenericResponse response = 1;
 }
 

@@ -7,7 +7,7 @@ export class ChatParticipant {
     user_id: number; // ID участника
 
     @Prop({ type: String, required: true, enum: ['owner', 'admin', 'member'] })
-    role: string; // Роль участника в чате ('admin' или 'member')
+    role: string;
 }
 
 export const ChatParticipantSchema =

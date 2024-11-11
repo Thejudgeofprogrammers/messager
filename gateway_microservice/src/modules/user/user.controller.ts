@@ -18,6 +18,7 @@ import {
 } from 'src/protos/proto_gen_files/user';
 import { StatusClient } from 'src/common/status';
 import { errMessages } from 'src/common/messages';
+import { RequireQueryPayload } from 'src/common/decorators/requireQueryPayload';
 
 type ResponseWithoutPassword<T> = Promise<Response<Omit<T, 'passwordHash'>>>;
 
@@ -58,18 +59,14 @@ export class UserController {
     ) {}
 
     @Get('findById')
+    @RequireQueryPayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
     async findUserById(
         @Query() data: FindUserByIdRequest,
         @Res() res: Response,
     ): ResponseWithoutPassword<Response<FindUserByIdResponse>> {
         const end = this.findByIdDuration.startTimer();
-        if (!data.userId) {
-            return res
-                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
-                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
-        }
         try {
-            const payload = await this.userService.findUserById({
+            const payload = await this.userService.FindUserById({
                 userId: data.userId,
             });
 
@@ -93,18 +90,14 @@ export class UserController {
     }
 
     @Get('findByTag')
+    @RequireQueryPayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
     async findUserByTag(
         @Query() data: FindUserByTagRequest,
         @Res() res: Response,
     ): ResponseWithoutPassword<Response<FindUserByTagResponse>> {
         const end = this.findByTagDuration.startTimer();
-        if (!data.tag) {
-            return res
-                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
-                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
-        }
         try {
-            const payload = await this.userService.findUserByTag({
+            const payload = await this.userService.FindUserByTag({
                 tag: data.tag,
             });
 
@@ -128,18 +121,14 @@ export class UserController {
     }
 
     @Get('findByPhone')
+    @RequireQueryPayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
     async findUserByPhone(
         @Query() data: FindUserByPhoneNumberRequest,
         @Res() res: Response,
     ): ResponseWithoutPassword<Response<FindUserByPhoneNumberResponse>> {
         const end = this.findByPhoneDuration.startTimer();
-        if (!data.phoneNumber) {
-            return res
-                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
-                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
-        }
         try {
-            const payload = await this.userService.findUserByPhone({
+            const payload = await this.userService.FindUserByPhoneNumber({
                 phoneNumber: data.phoneNumber,
             });
 
@@ -163,18 +152,14 @@ export class UserController {
     }
 
     @Get('findByEmail')
+    @RequireQueryPayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
     async findUserByEmail(
         @Query() data: FindUserByEmailRequest,
         @Res() res: Response,
     ): ResponseWithoutPassword<Response<FindUserByEmailResponse>> {
         const end = this.findByEmailDuration.startTimer();
-        if (!data.email) {
-            return res
-                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
-                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
-        }
         try {
-            const payload = await this.userService.findUserByEmail({
+            const payload = await this.userService.FindUserByEmail({
                 email: data.email,
             });
 
@@ -198,18 +183,14 @@ export class UserController {
     }
 
     @Get('findByUsername')
+    @RequireQueryPayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
     async findUsername(
         @Query() data: FindUserByUsernameRequest,
         @Res() res: Response,
     ): Promise<Response<FindUserByUsernameResponse>> {
         const end = this.findByUsernameDuration.startTimer();
-        if (!data.username) {
-            return res
-                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
-                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
-        }
         try {
-            const payload = await this.userService.findUserByUsername({
+            const payload = await this.userService.FindUserByUsername({
                 username: data.username,
             });
 
