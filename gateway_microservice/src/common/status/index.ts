@@ -11,4 +11,5 @@ export const StatusClient = {
         message: 'Error connecting to gRPC server',
         status: 14,
     },
+    HTTP_STATUS_CONFLICT: { message: 'Conflict', status: 409 },
 };

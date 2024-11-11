@@ -15,6 +15,10 @@ import {
     FindUserByTagResponse,
     CreateNewUserRequest,
     CreateNewUserResponse,
+    RemoveChatFromUserRequest,
+    RemoveChatFromUserResponse,
+    AddChatToUserResponse,
+    AddChatToUserRequest,
 } from '../../protos/proto_gen_files/user';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
@@ -34,6 +38,82 @@ export class UserService implements UserInterfase {
         @InjectMetric('PROM_METRIC_USER_FIND_DURATION')
         private readonly findUserDuration: Histogram<string>,
     ) {}
+
+    @GrpcMethod('UserService', 'AddChatToUser')
+    async AddChatToUser(
+        payload: AddChatToUserRequest,
+    ): Promise<AddChatToUserResponse> {
+        try {
+            if (!payload.userId || !payload.chatId) {
+                throw new InternalServerErrorException(
+                    'All fields are required',
+                );
+            }
+            const existUser = await this.prismaService.user.findUnique({
+                where: { user_id: +payload.userId },
+            });
+
+            if (!existUser) {
+                throw new InternalServerErrorException('User not found');
+            }
+            await this.prismaService.user.update({
+                where: { user_id: +payload.userId },
+                data: {
+                    chatReferences: {
+                        push: payload.chatId,
+                    },
+                },
+            });
+
+            return { info: { message: 'Чат Добавлен', status: 200 } };
+        } catch (e) {
+            console.error('Error AddChatToUser:', e);
+            throw new InternalServerErrorException(
+                'Server encountered an issue',
+            );
+        }
+    }
+
+    @GrpcMethod('UserService', 'RemoveChatFromUser')
+    async RemoveChatFromUser(
+        payload: RemoveChatFromUserRequest,
+    ): Promise<RemoveChatFromUserResponse> {
+        try {
+            if (!payload.userId || !payload.chatId) {
+                throw new InternalServerErrorException(
+                    'All fields are required',
+                );
+            }
+
+            const user = await this.prismaService.user.findUnique({
+                where: { user_id: +payload.userId },
+            });
+
+            if (!user) {
+                throw new InternalServerErrorException('User not found');
+            }
+
+            await this.prismaService.user.update({
+                where: { user_id: +payload.userId },
+                data: {
+                    chatReferences: {
+                        set: user.chatReferences.filter(
+                            (id) => id !== payload.chatId,
+                        ),
+                    },
+                },
+            });
+
+            return {
+                info: { message: 'Пользователь покинул чат', status: 200 },
+            };
+        } catch (e) {
+            console.error('Error RemoveChatFromUser:', e);
+            throw new InternalServerErrorException(
+                'Server encountered an issue',
+            );
+        }
+    }
 
     @GrpcMethod('UserService', 'CreateNewUser')
     async CreateNewUser(
@@ -112,6 +192,7 @@ export class UserService implements UserInterfase {
                     tag: existUser.tag,
                     passwordHash: existUser.password_hash,
                     username: existUser.username,
+                    chatReferences: existUser.chatReferences,
                 },
             };
         } catch (e) {

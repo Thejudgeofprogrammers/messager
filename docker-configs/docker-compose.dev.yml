@@ -39,6 +39,33 @@ services:
     networks:
       - mynetwork
 
+  chat_microservice:
+    container_name: chat_microservice
+    build:
+      context: ../chat_microservice
+      dockerfile: Dockerfile
+    ports:
+      - "50054:50054"
+    depends_on:
+      - mongodb
+    env_file: ../chat_microservice/.env
+    networks:
+      - mynetwork
+
+  message_microservice:
+    container_name: message_microservice
+    build:
+      context: ../message_microservice
+      dockerfile: Dockerfile
+    ports:
+      - "50055:50055"
+    depends_on:
+      - chat_microservice
+      - mongodb
+    env_file: ../message_microservice/.env
+    networks:
+      - mynetwork
+
   gateway_microservice:
     container_name: gateway_microservice
     build:
@@ -71,6 +98,19 @@ services:
     networks:
       - mynetwork
 
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    env_file:
+      - ../config/mongo.env
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - mynetwork
+    restart: always
+
   postgres_server:
     image: postgres:latest
     container_name: postgres_server
@@ -96,28 +136,52 @@ services:
     networks:
       - mynetwork
 
-  # prometheus:
-  #   image: prom/prometheus
-  #   container_name: prometheus
-  #   ports:
-  #     - "9090:9090"
-  #   volumes:
-  #     - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-  #   depends_on:
-  #     - grafana
+  postgres_exporter:
+    container_name: postgres_exporter
+    image: wrouesnel/postgres_exporter:latest
+    ports:
+      - "9187:9187"
+    environment:
+      - DATA_SOURCE_NAME=postgresql://admin:admin@postgres_server:5432/telegramm
+    networks:
+      - mynetwork
+    restart: always
 
-  # grafana:
-  #   image: grafana/grafana
-  #   container_name: grafana
-  #   ports:
-  #     - "4050:3000"
-  #   depends_on:
-  #     - user_microservice
-  #     - auth_microservice
-  #     - gateway_microservice
-  #     - session_microservice
-  #   env_file:
-  #     - ../config/grafana.env
+  mongodb_exporter:
+    container_name: mongodb_exporter
+    image: bitnami/mongodb-exporter:latest
+    ports:
+      - "9216:9216"
+    env_file:
+      - ../config/mongo.env
+    depends_on:
+      - mongodb
+    networks:
+      - mynetwork
+    restart: always
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - grafana
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "4050:3000"
+    depends_on:
+      - user_microservice
+      - auth_microservice
+      - gateway_microservice
+      - session_microservice
+    env_file:
+      - ../config/grafana.env
 
 networks:
   mynetwork:
@@ -126,3 +190,5 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  mongodb_data:
+    driver: local

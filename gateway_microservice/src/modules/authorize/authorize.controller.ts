@@ -12,6 +12,7 @@ import { myOptionalCookieOptions } from 'src/config/config.cookie';
 import { LoginFormDTO, LogoutDTO } from './dto';
 import { StatusClient } from 'src/common/status';
 import { errMessages } from 'src/common/messages';
+import { RequirePayload } from 'src/common/decorators/requirePayload';
 
 @Controller('auth')
 export class AuthorizeController {
@@ -38,16 +39,12 @@ export class AuthorizeController {
     ) {}
 
     @Post('login')
+    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
     async loginUser(
         @Body() payload: LoginFormDTO,
         @Res() res: Response,
     ): Promise<Response<LoginResponse>> {
         const end = this.loginDuration.startTimer();
-        if (!payload) {
-            return res
-                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
-                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
-        }
         try {
             const data = await this.authorizeService.loginUser(payload);
             const { userId, jwtToken } = data;
@@ -69,20 +66,17 @@ export class AuthorizeController {
     }
 
     @Post('register')
+    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
     async registerUser(
         @Body() payload: RegisterRequest,
         @Res() res: Response,
     ): Promise<Response<RegisterResponse>> {
         const end = this.registerDuration.startTimer();
-        if (!payload) {
-            return res
-                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
-                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
-        }
         try {
             const {
                 info: { message, status },
             } = await this.authorizeService.registerUser(payload);
+            this.registerTotal.inc();
             return res.json({ message, status });
         } catch (e) {
             return res
@@ -94,16 +88,12 @@ export class AuthorizeController {
     }
 
     @Post('logout')
+    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
     async logoutUser(
         @Body() payload: LogoutDTO,
         @Res() res: Response,
     ): Promise<Response<LogoutDTO>> {
         const end = this.logoutDuration.startTimer();
-        if (!payload) {
-            return res
-                .json({ message: StatusClient.HTTP_STATUS_BAD_REQUEST.message })
-                .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
-        }
         try {
             const data = await this.authorizeService.logoutUser(
                 payload.userId,

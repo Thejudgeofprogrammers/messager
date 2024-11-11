@@ -41,16 +41,20 @@ export interface GetChatByChatNameRequest {
 
 /** Ответ для получения чата по имени */
 export interface GetChatByChatNameResponse {
-  chatData?: Chat | undefined;
-  notFound?: ErrorResponse | undefined;
+  chatData: ChatIds[];
+}
+
+export interface ChatIds {
+  chatId: string;
+  chatName: string;
 }
 
 /** Запрос для обновления чата по ID */
 export interface UpdateChatByIdRequest {
   chatId: string;
-  chatName: string;
-  chatType: string;
-  lastMessage: LastMessage | undefined;
+  chatName?: string | undefined;
+  chatType?: string | undefined;
+  description?: string | undefined;
 }
 
 /** Ответ для обновления чата по ID */
@@ -66,16 +70,6 @@ export interface DeleteChatByIdRequest {
 /** Ответ для удаления чата по ID */
 export interface DeleteChatByIdResponse {
   response: GenericResponse | undefined;
-}
-
-/** Запрос для получения всех чатов */
-export interface GetAllChatsRequest {
-  userId: number;
-}
-
-/** Ответ для получения всех чатов */
-export interface GetAllChatsResponse {
-  chats: Chat[];
 }
 
 /** Запрос для добавления пользователя в чат */
@@ -97,6 +91,24 @@ export interface RemoveUserFromChatRequest {
 
 /** Ответ для удаления пользователя из чата */
 export interface RemoveUserFromChatResponse {
+  response: GenericResponse | undefined;
+}
+
+export interface LoadToChatRequest {
+  chatId: string;
+  userId: number;
+}
+
+export interface LoadToChatResponse {
+  response: GenericResponse | undefined;
+}
+
+export interface LeaveFromChatRequest {
+  chatId: string;
+  userId: number;
+}
+
+export interface LeaveFromChatResponse {
   response: GenericResponse | undefined;
 }
 
@@ -492,16 +504,13 @@ export const GetChatByChatNameRequest: MessageFns<GetChatByChatNameRequest> = {
 };
 
 function createBaseGetChatByChatNameResponse(): GetChatByChatNameResponse {
-  return { chatData: undefined, notFound: undefined };
+  return { chatData: [] };
 }
 
 export const GetChatByChatNameResponse: MessageFns<GetChatByChatNameResponse> = {
   encode(message: GetChatByChatNameResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.chatData !== undefined) {
-      Chat.encode(message.chatData, writer.uint32(10).fork()).join();
-    }
-    if (message.notFound !== undefined) {
-      ErrorResponse.encode(message.notFound, writer.uint32(18).fork()).join();
+    for (const v of message.chatData) {
+      ChatIds.encode(v!, writer.uint32(10).fork()).join();
     }
     return writer;
   },
@@ -518,15 +527,7 @@ export const GetChatByChatNameResponse: MessageFns<GetChatByChatNameResponse> = 
             break;
           }
 
-          message.chatData = Chat.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.notFound = ErrorResponse.decode(reader, reader.uint32());
+          message.chatData.push(ChatIds.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -540,18 +541,14 @@ export const GetChatByChatNameResponse: MessageFns<GetChatByChatNameResponse> = 
 
   fromJSON(object: any): GetChatByChatNameResponse {
     return {
-      chatData: isSet(object.chatData) ? Chat.fromJSON(object.chatData) : undefined,
-      notFound: isSet(object.notFound) ? ErrorResponse.fromJSON(object.notFound) : undefined,
+      chatData: globalThis.Array.isArray(object?.chatData) ? object.chatData.map((e: any) => ChatIds.fromJSON(e)) : [],
     };
   },
 
   toJSON(message: GetChatByChatNameResponse): unknown {
     const obj: any = {};
-    if (message.chatData !== undefined) {
-      obj.chatData = Chat.toJSON(message.chatData);
-    }
-    if (message.notFound !== undefined) {
-      obj.notFound = ErrorResponse.toJSON(message.notFound);
+    if (message.chatData?.length) {
+      obj.chatData = message.chatData.map((e) => ChatIds.toJSON(e));
     }
     return obj;
   },
@@ -561,18 +558,89 @@ export const GetChatByChatNameResponse: MessageFns<GetChatByChatNameResponse> = 
   },
   fromPartial<I extends Exact<DeepPartial<GetChatByChatNameResponse>, I>>(object: I): GetChatByChatNameResponse {
     const message = createBaseGetChatByChatNameResponse();
-    message.chatData = (object.chatData !== undefined && object.chatData !== null)
-      ? Chat.fromPartial(object.chatData)
-      : undefined;
-    message.notFound = (object.notFound !== undefined && object.notFound !== null)
-      ? ErrorResponse.fromPartial(object.notFound)
-      : undefined;
+    message.chatData = object.chatData?.map((e) => ChatIds.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseChatIds(): ChatIds {
+  return { chatId: "", chatName: "" };
+}
+
+export const ChatIds: MessageFns<ChatIds> = {
+  encode(message: ChatIds, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.chatId !== "") {
+      writer.uint32(10).string(message.chatId);
+    }
+    if (message.chatName !== "") {
+      writer.uint32(18).string(message.chatName);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ChatIds {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseChatIds();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.chatId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.chatName = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ChatIds {
+    return {
+      chatId: isSet(object.chatId) ? globalThis.String(object.chatId) : "",
+      chatName: isSet(object.chatName) ? globalThis.String(object.chatName) : "",
+    };
+  },
+
+  toJSON(message: ChatIds): unknown {
+    const obj: any = {};
+    if (message.chatId !== "") {
+      obj.chatId = message.chatId;
+    }
+    if (message.chatName !== "") {
+      obj.chatName = message.chatName;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ChatIds>, I>>(base?: I): ChatIds {
+    return ChatIds.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ChatIds>, I>>(object: I): ChatIds {
+    const message = createBaseChatIds();
+    message.chatId = object.chatId ?? "";
+    message.chatName = object.chatName ?? "";
     return message;
   },
 };
 
 function createBaseUpdateChatByIdRequest(): UpdateChatByIdRequest {
-  return { chatId: "", chatName: "", chatType: "", lastMessage: undefined };
+  return { chatId: "", chatName: undefined, chatType: undefined, description: undefined };
 }
 
 export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
@@ -580,14 +648,14 @@ export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
     if (message.chatId !== "") {
       writer.uint32(10).string(message.chatId);
     }
-    if (message.chatName !== "") {
+    if (message.chatName !== undefined) {
       writer.uint32(18).string(message.chatName);
     }
-    if (message.chatType !== "") {
+    if (message.chatType !== undefined) {
       writer.uint32(26).string(message.chatType);
     }
-    if (message.lastMessage !== undefined) {
-      LastMessage.encode(message.lastMessage, writer.uint32(34).fork()).join();
+    if (message.description !== undefined) {
+      writer.uint32(34).string(message.description);
     }
     return writer;
   },
@@ -628,7 +696,7 @@ export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
             break;
           }
 
-          message.lastMessage = LastMessage.decode(reader, reader.uint32());
+          message.description = reader.string();
           continue;
         }
       }
@@ -643,9 +711,9 @@ export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
   fromJSON(object: any): UpdateChatByIdRequest {
     return {
       chatId: isSet(object.chatId) ? globalThis.String(object.chatId) : "",
-      chatName: isSet(object.chatName) ? globalThis.String(object.chatName) : "",
-      chatType: isSet(object.chatType) ? globalThis.String(object.chatType) : "",
-      lastMessage: isSet(object.lastMessage) ? LastMessage.fromJSON(object.lastMessage) : undefined,
+      chatName: isSet(object.chatName) ? globalThis.String(object.chatName) : undefined,
+      chatType: isSet(object.chatType) ? globalThis.String(object.chatType) : undefined,
+      description: isSet(object.description) ? globalThis.String(object.description) : undefined,
     };
   },
 
@@ -654,14 +722,14 @@ export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
     if (message.chatId !== "") {
       obj.chatId = message.chatId;
     }
-    if (message.chatName !== "") {
+    if (message.chatName !== undefined) {
       obj.chatName = message.chatName;
     }
-    if (message.chatType !== "") {
+    if (message.chatType !== undefined) {
       obj.chatType = message.chatType;
     }
-    if (message.lastMessage !== undefined) {
-      obj.lastMessage = LastMessage.toJSON(message.lastMessage);
+    if (message.description !== undefined) {
+      obj.description = message.description;
     }
     return obj;
   },
@@ -672,11 +740,9 @@ export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
   fromPartial<I extends Exact<DeepPartial<UpdateChatByIdRequest>, I>>(object: I): UpdateChatByIdRequest {
     const message = createBaseUpdateChatByIdRequest();
     message.chatId = object.chatId ?? "";
-    message.chatName = object.chatName ?? "";
-    message.chatType = object.chatType ?? "";
-    message.lastMessage = (object.lastMessage !== undefined && object.lastMessage !== null)
-      ? LastMessage.fromPartial(object.lastMessage)
-      : undefined;
+    message.chatName = object.chatName ?? undefined;
+    message.chatType = object.chatType ?? undefined;
+    message.description = object.description ?? undefined;
     return message;
   },
 };
@@ -855,122 +921,6 @@ export const DeleteChatByIdResponse: MessageFns<DeleteChatByIdResponse> = {
     message.response = (object.response !== undefined && object.response !== null)
       ? GenericResponse.fromPartial(object.response)
       : undefined;
-    return message;
-  },
-};
-
-function createBaseGetAllChatsRequest(): GetAllChatsRequest {
-  return { userId: 0 };
-}
-
-export const GetAllChatsRequest: MessageFns<GetAllChatsRequest> = {
-  encode(message: GetAllChatsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.userId !== 0) {
-      writer.uint32(8).int32(message.userId);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): GetAllChatsRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetAllChatsRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.userId = reader.int32();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetAllChatsRequest {
-    return { userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0 };
-  },
-
-  toJSON(message: GetAllChatsRequest): unknown {
-    const obj: any = {};
-    if (message.userId !== 0) {
-      obj.userId = Math.round(message.userId);
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<GetAllChatsRequest>, I>>(base?: I): GetAllChatsRequest {
-    return GetAllChatsRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<GetAllChatsRequest>, I>>(object: I): GetAllChatsRequest {
-    const message = createBaseGetAllChatsRequest();
-    message.userId = object.userId ?? 0;
-    return message;
-  },
-};
-
-function createBaseGetAllChatsResponse(): GetAllChatsResponse {
-  return { chats: [] };
-}
-
-export const GetAllChatsResponse: MessageFns<GetAllChatsResponse> = {
-  encode(message: GetAllChatsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.chats) {
-      Chat.encode(v!, writer.uint32(10).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): GetAllChatsResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetAllChatsResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.chats.push(Chat.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetAllChatsResponse {
-    return { chats: globalThis.Array.isArray(object?.chats) ? object.chats.map((e: any) => Chat.fromJSON(e)) : [] };
-  },
-
-  toJSON(message: GetAllChatsResponse): unknown {
-    const obj: any = {};
-    if (message.chats?.length) {
-      obj.chats = message.chats.map((e) => Chat.toJSON(e));
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<GetAllChatsResponse>, I>>(base?: I): GetAllChatsResponse {
-    return GetAllChatsResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<GetAllChatsResponse>, I>>(object: I): GetAllChatsResponse {
-    const message = createBaseGetAllChatsResponse();
-    message.chats = object.chats?.map((e) => Chat.fromPartial(e)) || [];
     return message;
   },
 };
@@ -1242,6 +1192,278 @@ export const RemoveUserFromChatResponse: MessageFns<RemoveUserFromChatResponse> 
   },
   fromPartial<I extends Exact<DeepPartial<RemoveUserFromChatResponse>, I>>(object: I): RemoveUserFromChatResponse {
     const message = createBaseRemoveUserFromChatResponse();
+    message.response = (object.response !== undefined && object.response !== null)
+      ? GenericResponse.fromPartial(object.response)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseLoadToChatRequest(): LoadToChatRequest {
+  return { chatId: "", userId: 0 };
+}
+
+export const LoadToChatRequest: MessageFns<LoadToChatRequest> = {
+  encode(message: LoadToChatRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.chatId !== "") {
+      writer.uint32(10).string(message.chatId);
+    }
+    if (message.userId !== 0) {
+      writer.uint32(16).int32(message.userId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): LoadToChatRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseLoadToChatRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.chatId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): LoadToChatRequest {
+    return {
+      chatId: isSet(object.chatId) ? globalThis.String(object.chatId) : "",
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+    };
+  },
+
+  toJSON(message: LoadToChatRequest): unknown {
+    const obj: any = {};
+    if (message.chatId !== "") {
+      obj.chatId = message.chatId;
+    }
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<LoadToChatRequest>, I>>(base?: I): LoadToChatRequest {
+    return LoadToChatRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<LoadToChatRequest>, I>>(object: I): LoadToChatRequest {
+    const message = createBaseLoadToChatRequest();
+    message.chatId = object.chatId ?? "";
+    message.userId = object.userId ?? 0;
+    return message;
+  },
+};
+
+function createBaseLoadToChatResponse(): LoadToChatResponse {
+  return { response: undefined };
+}
+
+export const LoadToChatResponse: MessageFns<LoadToChatResponse> = {
+  encode(message: LoadToChatResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.response !== undefined) {
+      GenericResponse.encode(message.response, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): LoadToChatResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseLoadToChatResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.response = GenericResponse.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): LoadToChatResponse {
+    return { response: isSet(object.response) ? GenericResponse.fromJSON(object.response) : undefined };
+  },
+
+  toJSON(message: LoadToChatResponse): unknown {
+    const obj: any = {};
+    if (message.response !== undefined) {
+      obj.response = GenericResponse.toJSON(message.response);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<LoadToChatResponse>, I>>(base?: I): LoadToChatResponse {
+    return LoadToChatResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<LoadToChatResponse>, I>>(object: I): LoadToChatResponse {
+    const message = createBaseLoadToChatResponse();
+    message.response = (object.response !== undefined && object.response !== null)
+      ? GenericResponse.fromPartial(object.response)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseLeaveFromChatRequest(): LeaveFromChatRequest {
+  return { chatId: "", userId: 0 };
+}
+
+export const LeaveFromChatRequest: MessageFns<LeaveFromChatRequest> = {
+  encode(message: LeaveFromChatRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.chatId !== "") {
+      writer.uint32(10).string(message.chatId);
+    }
+    if (message.userId !== 0) {
+      writer.uint32(16).int32(message.userId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): LeaveFromChatRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseLeaveFromChatRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.chatId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): LeaveFromChatRequest {
+    return {
+      chatId: isSet(object.chatId) ? globalThis.String(object.chatId) : "",
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+    };
+  },
+
+  toJSON(message: LeaveFromChatRequest): unknown {
+    const obj: any = {};
+    if (message.chatId !== "") {
+      obj.chatId = message.chatId;
+    }
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<LeaveFromChatRequest>, I>>(base?: I): LeaveFromChatRequest {
+    return LeaveFromChatRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<LeaveFromChatRequest>, I>>(object: I): LeaveFromChatRequest {
+    const message = createBaseLeaveFromChatRequest();
+    message.chatId = object.chatId ?? "";
+    message.userId = object.userId ?? 0;
+    return message;
+  },
+};
+
+function createBaseLeaveFromChatResponse(): LeaveFromChatResponse {
+  return { response: undefined };
+}
+
+export const LeaveFromChatResponse: MessageFns<LeaveFromChatResponse> = {
+  encode(message: LeaveFromChatResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.response !== undefined) {
+      GenericResponse.encode(message.response, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): LeaveFromChatResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseLeaveFromChatResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.response = GenericResponse.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): LeaveFromChatResponse {
+    return { response: isSet(object.response) ? GenericResponse.fromJSON(object.response) : undefined };
+  },
+
+  toJSON(message: LeaveFromChatResponse): unknown {
+    const obj: any = {};
+    if (message.response !== undefined) {
+      obj.response = GenericResponse.toJSON(message.response);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<LeaveFromChatResponse>, I>>(base?: I): LeaveFromChatResponse {
+    return LeaveFromChatResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<LeaveFromChatResponse>, I>>(object: I): LeaveFromChatResponse {
+    const message = createBaseLeaveFromChatResponse();
     message.response = (object.response !== undefined && object.response !== null)
       ? GenericResponse.fromPartial(object.response)
       : undefined;
@@ -1852,9 +2074,10 @@ export interface ChatService {
   GetChatByChatName(request: GetChatByChatNameRequest): Promise<GetChatByChatNameResponse>;
   UpdateChatById(request: UpdateChatByIdRequest): Promise<UpdateChatByIdResponse>;
   DeleteChatById(request: DeleteChatByIdRequest): Promise<DeleteChatByIdResponse>;
-  GetAllChats(request: GetAllChatsRequest): Promise<GetAllChatsResponse>;
   AddUserToChat(request: AddUserToChatRequest): Promise<AddUserToChatResponse>;
   RemoveUserFromChat(request: RemoveUserFromChatRequest): Promise<RemoveUserFromChatResponse>;
+  LoadToChat(request: LoadToChatRequest): Promise<LoadToChatResponse>;
+  LeaveFromChat(request: LeaveFromChatRequest): Promise<LeaveFromChatResponse>;
 }
 
 export const ChatServiceServiceName = "chat.ChatService";
@@ -1869,9 +2092,10 @@ export class ChatServiceClientImpl implements ChatService {
     this.GetChatByChatName = this.GetChatByChatName.bind(this);
     this.UpdateChatById = this.UpdateChatById.bind(this);
     this.DeleteChatById = this.DeleteChatById.bind(this);
-    this.GetAllChats = this.GetAllChats.bind(this);
     this.AddUserToChat = this.AddUserToChat.bind(this);
     this.RemoveUserFromChat = this.RemoveUserFromChat.bind(this);
+    this.LoadToChat = this.LoadToChat.bind(this);
+    this.LeaveFromChat = this.LeaveFromChat.bind(this);
   }
   CreateNewChat(request: CreateNewChatRequest): Promise<CreateNewChatResponse> {
     const data = CreateNewChatRequest.encode(request).finish();
@@ -1903,12 +2127,6 @@ export class ChatServiceClientImpl implements ChatService {
     return promise.then((data) => DeleteChatByIdResponse.decode(new BinaryReader(data)));
   }
 
-  GetAllChats(request: GetAllChatsRequest): Promise<GetAllChatsResponse> {
-    const data = GetAllChatsRequest.encode(request).finish();
-    const promise = this.rpc.request(this.service, "GetAllChats", data);
-    return promise.then((data) => GetAllChatsResponse.decode(new BinaryReader(data)));
-  }
-
   AddUserToChat(request: AddUserToChatRequest): Promise<AddUserToChatResponse> {
     const data = AddUserToChatRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "AddUserToChat", data);
@@ -1919,6 +2137,18 @@ export class ChatServiceClientImpl implements ChatService {
     const data = RemoveUserFromChatRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "RemoveUserFromChat", data);
     return promise.then((data) => RemoveUserFromChatResponse.decode(new BinaryReader(data)));
+  }
+
+  LoadToChat(request: LoadToChatRequest): Promise<LoadToChatResponse> {
+    const data = LoadToChatRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "LoadToChat", data);
+    return promise.then((data) => LoadToChatResponse.decode(new BinaryReader(data)));
+  }
+
+  LeaveFromChat(request: LeaveFromChatRequest): Promise<LeaveFromChatResponse> {
+    const data = LeaveFromChatRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "LeaveFromChat", data);
+    return promise.then((data) => LeaveFromChatResponse.decode(new BinaryReader(data)));
   }
 }
 

@@ -15,6 +15,26 @@ service UserService {
     // rpc UpdateUserPassword (UpdateUserPasswordRequest) returns (UpdateUserPasswordResponse);
     // rpc AddAvatarToUser (AddAvatarToUserRequest) returns (AddAvatarToUserResponse);
     // rpc DeleteAvatarUser (DeleteAvatarUserRequest) returns (DeleteAvatarUserResponse);
+    rpc AddChatToUser (AddChatToUserRequest) returns (AddChatToUserResponse);
+    rpc RemoveChatFromUser (RemoveChatFromUserRequest) returns (RemoveChatFromUserResponse);
+}
+
+message AddChatToUserRequest {
+    int32 user_id = 1;
+    string chat_id = 2;
+}
+
+message AddChatToUserResponse {
+    ResponseMessage info = 1;
+}
+
+message RemoveChatFromUserRequest {
+    int32 user_id = 1;
+    string chat_id = 2;
+}
+
+message RemoveChatFromUserResponse {
+    ResponseMessage info = 1;
 }
 
 message CreateNewUserRequest {
@@ -34,9 +54,19 @@ message FindUserByIdRequest {
 
 message FindUserByIdResponse {
     oneof user {
-        UserData user_data = 1;
+        UserDataId user_data = 1;
         UserNotFoundResponse not_found = 2;
     }
+}
+
+message UserDataId {
+    int32 user_id = 1;
+    string phone_number = 2;
+    string email = 3;
+    string tag = 4;
+    string password_hash = 5;
+    string username = 6;
+    repeated string chatReferences = 7;
 }
 
 message FindUserByUsernameRequest {

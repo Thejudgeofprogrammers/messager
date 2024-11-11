@@ -1,11 +1,17 @@
 import { Module } from '@nestjs/common';
-import configuration from '../config/config.main';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChatModule } from './chats/chats.module';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import configuration from '../config/config.main';
 
 @Module({
     imports: [
+        PrometheusModule.register({
+            defaultLabels: {
+                app: 'telegramm',
+            },
+        }),
         ConfigModule.forRoot({
             envFilePath: '../../.env',
             isGlobal: true,
