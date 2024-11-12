@@ -17,7 +17,7 @@ import {
 } from 'src/config/grpc/grpc.options';
 import {
     CreateNewUserResponse,
-    FindUserByIdResponse,
+    FindUserByPhoneNumberResponse,
     UserService as UserInterface,
 } from 'src/protos/proto_gen_files/user';
 import { grpcClientOptionsSessionUser } from 'src/config/grpc/grpc.options';
@@ -123,7 +123,7 @@ export class AuthorizeService implements OnModuleInit {
 
         let data: LoginFormDTO;
         let validatePayload: string;
-        let existUser: FindUserByIdResponse;
+        let existUser: FindUserByPhoneNumberResponse;
 
         if (payload.email) {
             validatePayload = this.classifyInput(payload.email);
@@ -141,7 +141,7 @@ export class AuthorizeService implements OnModuleInit {
             existUser = await lastValueFrom(
                 from(
                     this.userMicroservice.FindUserByPhoneNumber({
-                        phoneNumber: data.phoneNumber,
+                        phoneNumber: data.phoneNumber.toString(),
                     }),
                 ),
             );

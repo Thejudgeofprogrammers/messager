@@ -2,7 +2,6 @@ import {
     BadRequestException,
     Controller,
     InternalServerErrorException,
-    Logger,
     UnauthorizedException,
 } from '@nestjs/common';
 
@@ -19,11 +18,10 @@ import {
 } from '../../protos/proto_gen_files/auth';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
+import { StatusClient } from 'src/common/status';
 
 @Controller('AuthService')
 export class AuthService implements AuthInterface {
-    private readonly logger = new Logger(AuthService.name);
-
     constructor(
         private readonly cryptService: CryptService,
         private readonly tokenService: TokenService,
@@ -45,7 +43,9 @@ export class AuthService implements AuthInterface {
         const end = this.registerDuration.startTimer();
         try {
             if (!data.email && !data.phoneNumber && !data.password)
-                throw new BadRequestException('Data missing');
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
 
             const hashedPassword = await this.cryptService.hashPassword(
                 data.password,
@@ -59,8 +59,9 @@ export class AuthService implements AuthInterface {
                 phoneNumber: data.phoneNumber,
             };
         } catch (e) {
-            this.logger.error('Error during registration', e);
-            throw new InternalServerErrorException(`Server have problem ${e}`);
+            throw new InternalServerErrorException(
+                `${StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message}: ${e}`,
+            );
         } finally {
             end();
         }
@@ -92,10 +93,14 @@ export class AuthService implements AuthInterface {
                 return userSessia;
             } else {
                 this.loginFailureTotal.inc();
-                throw new UnauthorizedException('User unauthorized');
+                throw new UnauthorizedException(
+                    StatusClient.HTTP_STATUS_UNAUTHORIZED.message,
+                );
             }
         } catch (e) {
-            throw new InternalServerErrorException(`Server have problem ${e}`);
+            throw new InternalServerErrorException(
+                `${StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message}: ${e}`,
+            );
         } finally {
             end();
         }

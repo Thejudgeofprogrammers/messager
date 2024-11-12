@@ -52,19 +52,19 @@ services:
     networks:
       - mynetwork
 
-  message_microservice:
-    container_name: message_microservice
-    build:
-      context: ../message_microservice
-      dockerfile: Dockerfile
-    ports:
-      - "50055:50055"
-    depends_on:
-      - chat_microservice
-      - mongodb
-    env_file: ../message_microservice/.env
-    networks:
-      - mynetwork
+  # message_microservice:
+  #   container_name: message_microservice
+  #   build:
+  #     context: ../message_microservice
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "50055:50055"
+  #   depends_on:
+  #     - chat_microservice
+  #     - mongodb
+  #   env_file: ../message_microservice/.env
+  #   networks:
+  #     - mynetwork
 
   gateway_microservice:
     container_name: gateway_microservice
@@ -99,17 +99,17 @@ services:
       - mynetwork
 
   mongodb:
-    container_name: mongodb
-    image: mongo:latest
+    image: mongo:5.0
+    container_name: mongo_db
+    restart: always
     ports:
       - "27017:27017"
-    env_file:
-      - ../config/mongo.env
+    command: mongod --noauth
     volumes:
-      - mongodb_data:/data/db
+      - ../data/mongodb_data:/data/db
+      - ../data/common/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
       - mynetwork
-    restart: always
 
   postgres_server:
     image: postgres:latest
