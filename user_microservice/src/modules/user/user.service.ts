@@ -1,4 +1,9 @@
-import { Controller, InternalServerErrorException } from '@nestjs/common';
+import {
+    BadRequestException,
+    Controller,
+    InternalServerErrorException,
+    NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
@@ -22,6 +27,7 @@ import {
 } from '../../protos/proto_gen_files/user';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
+import { StatusClient } from 'src/common/status';
 
 @Controller('UserService')
 export class UserService implements UserInterfase {
@@ -32,7 +38,6 @@ export class UserService implements UserInterfase {
         private readonly createUserTotal: Counter<string>,
         @InjectMetric('PROM_METRIC_USER_CREATE_DURATION')
         private readonly createUserDuration: Histogram<string>,
-
         @InjectMetric('PROM_METRIC_USER_FIND_TOTAL')
         private readonly findUserTotal: Counter<string>,
         @InjectMetric('PROM_METRIC_USER_FIND_DURATION')
@@ -45,8 +50,8 @@ export class UserService implements UserInterfase {
     ): Promise<AddChatToUserResponse> {
         try {
             if (!payload.userId || !payload.chatId) {
-                throw new InternalServerErrorException(
-                    'All fields are required',
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
                 );
             }
             const existUser = await this.prismaService.user.findUnique({
@@ -54,9 +59,12 @@ export class UserService implements UserInterfase {
             });
 
             if (!existUser) {
-                throw new InternalServerErrorException('User not found');
+                throw new NotFoundException(
+                    StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                );
             }
-            await this.prismaService.user.update({
+
+            const updateUser = await this.prismaService.user.update({
                 where: { user_id: +payload.userId },
                 data: {
                     chatReferences: {
@@ -65,11 +73,20 @@ export class UserService implements UserInterfase {
                 },
             });
 
-            return { info: { message: 'Чат Добавлен', status: 200 } };
+            if (!updateUser)
+                throw new InternalServerErrorException(
+                    StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+                );
+
+            return {
+                info: {
+                    message: StatusClient.HTTP_STATUS_OK.message,
+                    status: StatusClient.HTTP_STATUS_OK.status,
+                },
+            };
         } catch (e) {
-            console.error('Error AddChatToUser:', e);
             throw new InternalServerErrorException(
-                'Server encountered an issue',
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
             );
         }
     }

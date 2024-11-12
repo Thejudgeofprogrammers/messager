@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { errMessages } from 'src/common/messages';
 
 @Injectable()
 export class TokenService {
@@ -15,9 +16,9 @@ export class TokenService {
 
     async verifyToken(token: string): Promise<any> {
         try {
-            return this.jwtService.verify(token);
+            return await this.jwtService.verify(token);
         } catch (e) {
-            throw new Error('Invalid token');
+            throw new Error(errMessages.INVALID_TOKEN);
         }
     }
 

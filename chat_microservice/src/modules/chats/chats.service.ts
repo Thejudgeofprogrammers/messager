@@ -24,7 +24,7 @@ import {
     GetChatByIdResponse,
     RemoveUserFromChatRequest,
     RemoveUserFromChatResponse,
-} from '../../protos/proto_gen_files/chat';
+} from 'src/protos/proto_gen_files/chat';
 import { Message, MessageDocument } from './schemas/Message';
 
 @Controller('ChatService')

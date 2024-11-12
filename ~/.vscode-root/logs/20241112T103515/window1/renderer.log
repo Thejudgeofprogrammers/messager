@@ -1,0 +1,3 @@
+2024-11-12 10:35:18.077 [info] Started local extension host with pid 7552.
+2024-11-12 10:35:18.578 [warning] [zobo.php-intellisense]: Cannot register 'php.executablePath'. This property is already registered.
+2024-11-12 10:35:21.002 [info] [perf] Render performance baseline is 60ms

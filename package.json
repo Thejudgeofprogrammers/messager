@@ -7,8 +7,8 @@
     "license": "UNLICENSED",
     "scripts": {
         "word": "./scripts/find_word.sh",
-        "dev:build": "docker-compose -f ./docker-configs/docker-compose.dev.yml up --build",
-        "prod:build": "docker-compose -f ./docker-configs/docker-compose.prod.yml up --build",
+        "dev:build": "docker compose -f ./docker-configs/docker-compose.dev.yml up --build",
+        "prod:build": "docker compose -f ./docker-configs/docker-compose.prod.yml up --build",
         "del:cont": "python3 ./scripts/del.py",
         "check:len": "./scripts/len.sh",
         "start:mysql_only": "docker-compose -f ./docker-configs/docker-compose.mysql.yml up --build",
