@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException,
     Injectable,
     InternalServerErrorException,
@@ -6,7 +7,10 @@ import {
     OnModuleInit,
 } from '@nestjs/common';
 import { Client, ClientGrpc } from '@nestjs/microservices';
-import { grpcClientOptionsChat } from 'src/config/grpc/grpc.options';
+import {
+    grpcClientOptionsChat,
+    grpcClientOptionsUser,
+} from 'src/config/grpc/grpc.options';
 import {
     AddUserToChatRequest,
     AddUserToChatResponse,
@@ -34,22 +38,42 @@ import { StatusClient } from 'src/common/status';
 import { from, lastValueFrom } from 'rxjs';
 import { UserService } from '../user/user.service';
 
+import {
+    ArrayLinkUsers,
+    RemoveArrayChatRequest,
+    RemoveArrayChatResponse,
+    // RemoveArrayChatRequest,
+    // RemoveArrayChatResponse,
+    UserService as UserServiceClient,
+} from 'src/protos/proto_gen_files/user';
+import { DeleteChatByIdResponseDTO } from './dto';
+
 @Injectable()
-export class ChatService implements ChatInterface, OnModuleInit {
+export class ChatService implements OnModuleInit {
     @Client(grpcClientOptionsChat)
     private readonly chatClient: ClientGrpc;
+    @Client(grpcClientOptionsUser)
+    private readonly userClient: ClientGrpc;
 
     private chatMicroservice: ChatInterface;
+    private userMicroservice: UserServiceClient;
 
     constructor(private readonly userService: UserService) {}
 
     onModuleInit() {
         this.chatMicroservice =
             this.chatClient.getService<ChatInterface>('ChatService');
+        this.userMicroservice =
+            this.userClient.getService<UserServiceClient>('UserService');
     }
 
     async LoadToChat(payload: LoadToChatRequest): Promise<LoadToChatResponse> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const userAdd = await this.userService.AddChatToUser({
                 userId: +payload.userId,
                 chatId: payload.chatId,
@@ -95,6 +119,11 @@ export class ChatService implements ChatInterface, OnModuleInit {
         payload: LeaveFromChatRequest,
     ): Promise<LeaveFromChatResponse> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const userAdd = await this.userService.AddChatToUser({
                 userId: +payload.userId,
                 chatId: payload.chatId,
@@ -137,6 +166,11 @@ export class ChatService implements ChatInterface, OnModuleInit {
         payload: CreateNewChatRequest,
     ): Promise<CreateNewChatResponse> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const chatInfo = await lastValueFrom(
                 from(
                     this.chatMicroservice.CreateNewChat({
@@ -147,9 +181,20 @@ export class ChatService implements ChatInterface, OnModuleInit {
                 ),
             );
 
-            if (chatInfo) {
+            if (!chatInfo) {
                 throw new ConflictException(
                     'Unable to create chat, possible data conflict.',
+                );
+            }
+
+            const addChat = await this.userService.AddChatToUser({
+                userId: payload.userId,
+                chatId: chatInfo.chatId,
+            });
+
+            if (!addChat) {
+                throw new InternalServerErrorException(
+                    'Ошибка добавления чата пользователю',
                 );
             }
 
@@ -173,18 +218,22 @@ export class ChatService implements ChatInterface, OnModuleInit {
         payload: GetChatByIdRequest,
     ): Promise<GetChatByIdResponse> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
+            const validChatId = payload.toString();
             const chatInfo = await lastValueFrom(
                 from(
                     this.chatMicroservice.GetChatById({
-                        chatId: payload.chatId,
+                        chatId: validChatId,
                     }),
                 ),
             );
-
-            if (chatInfo) {
+            if (!chatInfo) {
                 throw new NotFoundException(errMessages.notFound.chat);
             }
-
             return chatInfo;
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
@@ -205,15 +254,20 @@ export class ChatService implements ChatInterface, OnModuleInit {
         payload: GetChatByChatNameRequest,
     ): Promise<GetChatByChatNameResponse> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const chatInfo = await lastValueFrom(
                 from(
                     this.chatMicroservice.GetChatByChatName({
-                        chatName: payload.chatName,
+                        chatName: payload.toString(),
                     }),
                 ),
             );
 
-            if (chatInfo) {
+            if (!chatInfo) {
                 throw new NotFoundException(errMessages.notFound.chat);
             }
 
@@ -237,6 +291,11 @@ export class ChatService implements ChatInterface, OnModuleInit {
         payload: UpdateChatByIdRequest,
     ): Promise<UpdateChatByIdResponse> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const chatInfo = await lastValueFrom(
                 from(
                     this.chatMicroservice.UpdateChatById({
@@ -248,7 +307,7 @@ export class ChatService implements ChatInterface, OnModuleInit {
                 ),
             );
 
-            if (chatInfo) {
+            if (!chatInfo) {
                 throw new NotFoundException(errMessages.notFound.chat);
             }
 
@@ -270,21 +329,66 @@ export class ChatService implements ChatInterface, OnModuleInit {
 
     async DeleteChatById(
         payload: DeleteChatByIdRequest,
-    ): Promise<DeleteChatByIdResponse> {
+    ): Promise<DeleteChatByIdResponseDTO> {
         try {
-            const chatInfo = await lastValueFrom(
-                from(
-                    this.chatMicroservice.DeleteChatById({
-                        chatId: payload.chatId,
-                    }),
-                ),
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
+
+            const chatInfoData: DeleteChatByIdRequest = {
+                chatId: payload.chatId,
+                userId: +payload.userId,
+            };
+
+            if (!chatInfoData.chatId || isNaN(payload.userId)) {
+                throw new BadRequestException(
+                    'Invalid or missing userId in cookies',
+                );
+            }
+
+            const chatInfo: DeleteChatByIdResponse = await lastValueFrom(
+                from(this.chatMicroservice.DeleteChatById(chatInfoData)),
             );
 
-            if (chatInfo) {
+            console.log('chatInfo:', chatInfo);
+
+            if (!chatInfo) {
                 throw new NotFoundException(errMessages.notFound.chat);
             }
 
-            return chatInfo;
+            const arrayUsers: ArrayLinkUsers[] = chatInfo.info.data.map(
+                (userId: number) => ({
+                    userId,
+                }),
+            );
+
+            const chatParticipantDelData: RemoveArrayChatRequest = {
+                chatId: payload.chatId,
+                data: arrayUsers,
+            };
+
+            const chatParticipantDel: RemoveArrayChatResponse =
+                await lastValueFrom(
+                    from(
+                        this.userMicroservice.RemoveArrayChat(
+                            chatParticipantDelData,
+                        ),
+                    ),
+                );
+
+            if (chatParticipantDel.status !== 200) {
+                throw new InternalServerErrorException(
+                    'Failed to remove chat references for users',
+                );
+            }
+
+            // Возвращаем сообщение об успешном удалении
+            const msg = {
+                message: chatParticipantDel.message.toString(),
+            };
+            return msg;
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
@@ -292,6 +396,8 @@ export class ChatService implements ChatInterface, OnModuleInit {
                     code: e.code,
                 });
             }
+
+            console.error('Error in DeleteChatById:', e.message, e.stack);
 
             throw new RpcException({
                 message: errMessages.deleteChatById,
@@ -304,6 +410,11 @@ export class ChatService implements ChatInterface, OnModuleInit {
         payload: AddUserToChatRequest,
     ): Promise<AddUserToChatResponse> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const chatInfo = await lastValueFrom(
                 from(
                     this.chatMicroservice.AddUserToChat({
@@ -313,7 +424,7 @@ export class ChatService implements ChatInterface, OnModuleInit {
                 ),
             );
 
-            if (chatInfo) {
+            if (!chatInfo) {
                 throw new NotFoundException(errMessages.notFound.chat);
             }
 
@@ -337,6 +448,11 @@ export class ChatService implements ChatInterface, OnModuleInit {
         payload: RemoveUserFromChatRequest,
     ): Promise<RemoveUserFromChatResponse> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const chatInfo = await lastValueFrom(
                 from(
                     this.chatMicroservice.RemoveUserFromChat({
@@ -346,7 +462,7 @@ export class ChatService implements ChatInterface, OnModuleInit {
                 ),
             );
 
-            if (chatInfo) {
+            if (!chatInfo) {
                 throw new NotFoundException(errMessages.notFound.chat);
             }
 

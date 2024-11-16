@@ -160,28 +160,28 @@ services:
       - mynetwork
     restart: always
 
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    depends_on:
-      - grafana
+  # prometheus:
+  #   image: prom/prometheus
+  #   container_name: prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   depends_on:
+  #     - grafana
 
-  grafana:
-    image: grafana/grafana
-    container_name: grafana
-    ports:
-      - "4050:3000"
-    depends_on:
-      - user_microservice
-      - auth_microservice
-      - gateway_microservice
-      - session_microservice
-    env_file:
-      - ../config/grafana.env
+  # grafana:
+  #   image: grafana/grafana
+  #   container_name: grafana
+  #   ports:
+  #     - "4050:3000"
+  #   depends_on:
+  #     - user_microservice
+  #     - auth_microservice
+  #     - gateway_microservice
+  #     - session_microservice
+  #   env_file:
+  #     - ../config/grafana.env
 
 networks:
   mynetwork:

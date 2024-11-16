@@ -9,6 +9,7 @@ import { Request, Response, NextFunction } from 'express';
 import { from, lastValueFrom } from 'rxjs';
 import { errMessages } from 'src/common/messages';
 import { StatusClient } from 'src/common/status';
+import { exludeRoutes } from 'src/config/exlude_route';
 import { SessionUserService } from 'src/protos/proto_gen_files/session_user';
 
 @Injectable()
@@ -26,10 +27,7 @@ export class SessionMiddleware implements NestMiddleware, OnModuleInit {
     }
 
     async use(req: Request, res: Response, next: NextFunction) {
-        if (
-            req.originalUrl === '/api/auth/login' ||
-            req.originalUrl === '/api/auth/register'
-        ) {
+        if (exludeRoutes.includes(req.originalUrl)) {
             return next();
         }
         const { userId, jwtToken } = req.cookies;

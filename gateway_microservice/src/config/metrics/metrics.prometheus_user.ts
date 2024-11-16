@@ -13,14 +13,6 @@ export const prometheusProvidersUser = [
         help: 'Duration of find user by ID requests',
     }),
     makeCounterProvider({
-        name: 'PROM_METRIC_USER_FIND_BY_TAG_TOTAL',
-        help: 'Total number of find user by tag requests',
-    }),
-    makeHistogramProvider({
-        name: 'PROM_METRIC_USER_FIND_BY_TAG_DURATION',
-        help: 'Duration of find user by tag requests',
-    }),
-    makeCounterProvider({
         name: 'PROM_METRIC_USER_FIND_BY_PHONE_TOTAL',
         help: 'Total number of find user by phone requests',
     }),

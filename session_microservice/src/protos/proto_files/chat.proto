@@ -72,12 +72,22 @@ message UpdateChatByIdResponse {
 
 // Запрос для удаления чата по ID
 message DeleteChatByIdRequest {
-    string chat_id = 1;
+    int32 user_id = 1;
+    string chat_id = 2;
 }
 
-// Ответ для удаления чата по ID
 message DeleteChatByIdResponse {
-    GenericResponse response = 1;
+    message Response {
+      string message = 1;
+      int32 status = 2;
+    }
+    Response response = 1;
+  
+    message Info {
+      string chatId = 1;
+      repeated int32 data = 2; // Массив целых чисел, если это ID пользователей
+    }
+    Info info = 2;
 }
 
 // Запрос для добавления пользователя в чат

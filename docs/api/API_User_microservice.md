@@ -19,8 +19,7 @@ message FindUserByIdResponse {
     int32 user_id = 1;
     string phone_number = 2;
     string email = 3;
-    string tag = 4;
-    string password_hash = 5;
+    string password_hash = 4;
 }
 ```
 
@@ -114,32 +113,6 @@ message FindUserByUsernameRequest {
 ```protobuf
 message FindUserByUsernameResponse {
     repeated int32 user_ids = 1;
-}
-```
-
-#### **Ошибки:**
-- **InvalidArgument (400)**: Неверные входные данные
-- **Unauthenticated (401)**: Неавторизованный пользователь
-- **NotFound (404)**: Пользователь не найден
-- **Internal (500)**: Ошибка сервера
-
-
-## **5. FindUserByTag**
-
-### **Поиск пользователя по tag**
-- **gRPC Method**: `FindUserByTag`
-- **Service**: `UserService`
-
-#### **Запрос:** `FindUserByTagRequest`
-```protobuf
-message FindUserByTagRequest {
-    string tag = 1;
-}
-```
-#### **Ответ:** `FindUserByTagResponse`
-```protobuf
-message FindUserByTagResponse {
-    int32 user_id = 1;
 }
 ```
 

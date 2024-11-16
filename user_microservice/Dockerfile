@@ -3,12 +3,13 @@ FROM node:20-alpine3.20 AS builder
 WORKDIR /app
 
 COPY package*.json ./
+RUN npm install
+
 COPY prisma ./prisma/
-COPY src/protos ./src/protos/
-RUN npm install && npx prisma generate
+RUN npx prisma generate
 
 COPY . .
-RUN npm run build && echo "Build completed successfully" || echo "Build failed"
+RUN npm run build
 
 FROM node:20-alpine3.20
 

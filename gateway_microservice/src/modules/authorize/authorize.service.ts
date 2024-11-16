@@ -61,7 +61,9 @@ export class AuthorizeService implements OnModuleInit {
             !payload.phoneNumber ||
             !payload.username
         ) {
-            throw new BadRequestException('User did not enter a data');
+            throw new BadRequestException(
+                StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+            );
         }
         if (
             payload.email !== payload.email.trim() ||
@@ -117,7 +119,7 @@ export class AuthorizeService implements OnModuleInit {
             (payload.email && payload.phoneNumber)
         ) {
             throw new BadRequestException(
-                'User must enter either email or phone number, along with a password.',
+                StatusClient.HTTP_STATUS_BAD_REQUEST.message,
             );
         }
 

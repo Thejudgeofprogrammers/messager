@@ -5,3 +5,16 @@ export interface LastMessage {
     sender_id: number;
     preview: string;
 }
+
+export interface ParticipatsDTO {
+    user_id: number;
+    role: string;
+}
+
+export interface ChatAndParticipats {
+    chatName: string;
+    chatType: string;
+    lastMessage: LastMessage;
+    participants: ParticipatsDTO[];
+    messages: Types.ObjectId[];
+}

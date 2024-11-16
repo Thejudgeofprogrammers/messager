@@ -45,17 +45,6 @@ export class PrismaService extends PrismaClient {
         }
     }
 
-    async findUserByTag(tag: string): Promise<User> {
-        try {
-            return await this.user.findUnique({ where: { tag } });
-        } catch (error) {
-            console.error('Error finding user by tag:', error);
-            throw new InternalServerErrorException(
-                'Unable to find user by tag',
-            );
-        }
-    }
-
     async findUserByPhone(phone_number: string): Promise<User> {
         try {
             return await this.user.findUnique({

@@ -1,7 +1,9 @@
 import {
     Controller,
+    ForbiddenException,
     InternalServerErrorException,
     Logger,
+    NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Chat, ChatDocument } from './schemas/Chat';
@@ -65,8 +67,7 @@ export class ChatService {
                 sender_id: userId,
             };
 
-            const newMessage =
-                await this.chatParticipantModel.create(messageData);
+            const newMessage = await this.messageModel.create(messageData);
 
             if (!newParticipant || !newMessage) {
                 throw new InternalServerErrorException('Data Base exception');
@@ -76,12 +77,12 @@ export class ChatService {
                 chatName,
                 chatType,
                 lastMessage: {
-                    message_id: newMessage._id.toString(),
+                    message_id: newMessage._id,
                     sender_id: userId,
                     preview: pre,
                 },
-                participants: [newParticipant._id.toString()],
-                messages: [newMessage._id.toString()],
+                participants: [newParticipant._id],
+                messages: [newMessage._id],
             };
 
             const newChat = await this.chatModel.create(chatData);
@@ -107,14 +108,18 @@ export class ChatService {
         payload: GetChatByIdRequest,
     ): Promise<GetChatByIdResponse> {
         try {
+            if (!payload.chatId || !Types.ObjectId.isValid(payload.chatId)) {
+                throw new Error('Invalid or missing chatId in payload');
+            }
+            const validId = new Types.ObjectId(payload.chatId);
             const data = await this.chatModel
-                .findById(new Types.ObjectId(payload.chatId))
+                .findById(validId)
                 .populate('participants')
                 .populate('messages')
                 .exec();
 
             if (!data) {
-                throw new Error('Chat not found');
+                throw new Error(`Chat with ID ${validId} not found`);
             }
 
             const chatData = {
@@ -140,7 +145,6 @@ export class ChatService {
                     timestamp: message.createdAt,
                 })),
             };
-
             return { chatData };
         } catch (e) {
             this.logger.error(
@@ -160,7 +164,7 @@ export class ChatService {
         try {
             const data = await this.chatModel
                 .find({
-                    chatName: new Types.ObjectId(payload.chatName),
+                    chatName: payload.chatName,
                 })
                 .exec();
             if (!data) {
@@ -201,11 +205,32 @@ export class ChatService {
         payload: DeleteChatByIdRequest,
     ): Promise<DeleteChatByIdResponse> {
         try {
-            const chat = await this.chatModel.findOneAndDelete({
-                _id: new Types.ObjectId(payload.chatId),
-            });
+            const validId = new Types.ObjectId(payload.chatId);
+            const chat = await this.chatModel
+                .findById(validId)
+                .populate('participants')
+                .exec();
 
-            if (chat) {
+            if (!chat) {
+                throw new NotFoundException('Чат не найден');
+            }
+
+            const chatParticipantArray = (chat as any).participants;
+
+            const findOwner = chatParticipantArray.find(
+                (user: ChatParticipant) => user.role === 'owner',
+            );
+
+            const { user_id } = findOwner;
+            if (user_id !== payload.userId) {
+                throw new ForbiddenException(
+                    'Недостаточно прав для удаления чата',
+                );
+            }
+
+            const chatDel = await this.chatModel.findByIdAndDelete(validId);
+
+            if (chatDel) {
                 await this.messageModel.deleteMany({
                     _id: { $in: chat.messages },
                 });
@@ -214,7 +239,25 @@ export class ChatService {
                 });
             }
 
-            return { response: { message: 'Чат успешно удалён', status: 200 } };
+            const participantsArray = chatParticipantArray.map(
+                (participant: ChatParticipant) => participant.user_id,
+            );
+
+            const resp = {
+                response: {
+                    message: `Чат ${chat.chatName} удалён`,
+                    status: 200,
+                },
+                info: {
+                    chatId: payload.chatId.toString(),
+                    data: participantsArray,
+                },
+            };
+
+            console.log(`resp`);
+            console.log(resp);
+
+            return resp;
         } catch (e) {
             this.logger.error(
                 `Ошибка при создании чата: ${e.message}`,

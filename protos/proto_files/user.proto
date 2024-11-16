@@ -6,7 +6,6 @@ service UserService {
     rpc CreateNewUser (CreateNewUserRequest) returns (CreateNewUserResponse);
     rpc FindUserById (FindUserByIdRequest) returns (FindUserByIdResponse);
     rpc FindUserByUsername (FindUserByUsernameRequest) returns (FindUserByUsernameResponse);
-    rpc FindUserByTag (FindUserByTagRequest) returns (FindUserByTagResponse);
     rpc FindUserByEmail (FindUserByEmailRequest) returns (FindUserByEmailResponse);
     rpc FindUserByPhoneNumber (FindUserByPhoneNumberRequest) returns (FindUserByPhoneNumberResponse);
     // rpc FindUserProfile (FindUserProfileRequest) returns (FindUserProfileResponse);
@@ -17,6 +16,21 @@ service UserService {
     // rpc DeleteAvatarUser (DeleteAvatarUserRequest) returns (DeleteAvatarUserResponse);
     rpc AddChatToUser (AddChatToUserRequest) returns (AddChatToUserResponse);
     rpc RemoveChatFromUser (RemoveChatFromUserRequest) returns (RemoveChatFromUserResponse);
+    rpc RemoveArrayChat (RemoveArrayChatRequest) returns (RemoveArrayChatResponse);
+}
+
+message RemoveArrayChatRequest {
+    string chatId = 1;
+    repeated ArrayLinkUsers data = 2;
+}
+
+message ArrayLinkUsers {
+    int32 user_id = 1;
+}
+
+message RemoveArrayChatResponse {
+    string message = 1;
+    int32 status = 2;
 }
 
 message AddChatToUserRequest {
@@ -63,10 +77,9 @@ message UserDataId {
     int32 user_id = 1;
     string phone_number = 2;
     string email = 3;
-    string tag = 4;
-    string password_hash = 5;
-    string username = 6;
-    repeated string chatReferences = 7;
+    string password_hash = 4;
+    string username = 5;
+    repeated string chatReferences = 6;
 }
 
 message FindUserByUsernameRequest {
@@ -75,17 +88,6 @@ message FindUserByUsernameRequest {
 
 message FindUserByUsernameResponse {
     repeated UserArray users = 1;
-}
-
-message FindUserByTagRequest {
-    string tag = 1;
-}
-
-message FindUserByTagResponse {
-    oneof user {
-        UserData user_data = 1;
-        UserNotFoundResponse not_found = 2;
-    }
 }
 
 message FindUserByEmailRequest {
@@ -114,9 +116,8 @@ message UserData {
     int32 user_id = 1;
     string phone_number = 2;
     string email = 3;
-    string tag = 4;
-    string password_hash = 5;
-    string username = 6;
+    string password_hash = 4;
+    string username = 5;
 }
 
 message UserNotFoundResponse {

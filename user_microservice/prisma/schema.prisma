@@ -16,7 +16,6 @@ datasource db {
 model User {
   user_id         Int           @id @default(autoincrement())
   username        String        @db.VarChar(50)
-  tag             String?       @db.VarChar(30) @unique
   email           String        @db.VarChar(100) @unique
   password_hash   String        @db.Text
   phone_number    String?       @db.VarChar(15) @unique
