@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import {
+    BadRequestException,
+    Injectable,
+    NotFoundException,
+    OnModuleInit,
+} from '@nestjs/common';
 import { Client, ClientGrpc, RpcException } from '@nestjs/microservices';
 import { from, lastValueFrom } from 'rxjs';
 import {
@@ -10,23 +15,22 @@ import {
     FindUserByPhoneNumberRequest,
     FindUserByPhoneNumberResponse,
     FindUserByUsernameRequest,
-    FindUserByTagRequest,
     FindUserByUsernameResponse,
-    FindUserByTagResponse,
-    UserData,
     AddChatToUserRequest,
     AddChatToUserResponse,
     RemoveChatFromUserRequest,
     RemoveChatFromUserResponse,
+    UserDataId,
+    UserData,
 } from 'src/protos/proto_gen_files/user';
 import { grpcClientOptionsUser } from 'src/config/grpc/grpc.options';
 import { StatusClient } from 'src/common/status';
 import { errMessages } from 'src/common/messages';
 
-type UserServiceType = Omit<UserServiceClient, 'CreateNewUser'>;
+// type UserServiceType = Omit<UserServiceClient, 'CreateNewUser'>;
 
 @Injectable()
-export class UserService implements OnModuleInit, UserServiceType {
+export class UserService implements OnModuleInit {
     @Client(grpcClientOptionsUser)
     private readonly userClient: ClientGrpc;
 
@@ -37,13 +41,23 @@ export class UserService implements OnModuleInit, UserServiceType {
             this.userClient.getService<UserServiceClient>('UserService');
     }
 
+    validateUserIds(payload: UserDataId): any {
+        const validateUser = {
+            userId: payload.userId,
+            email: payload.email,
+            username: payload.username,
+            phoneNumber: payload.phoneNumber,
+            chatReferences: payload.chatReferences,
+        };
+        return validateUser;
+    }
+
     validateUser(payload: UserData): any {
         const validateUser = {
             userId: payload.userId,
             email: payload.email,
             username: payload.username,
             phoneNumber: payload.phoneNumber,
-            tag: payload.tag,
         };
         return validateUser;
     }
@@ -52,6 +66,11 @@ export class UserService implements OnModuleInit, UserServiceType {
         payload: AddChatToUserRequest,
     ): Promise<AddChatToUserResponse> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const addChat = await lastValueFrom(
                 from(
                     this.userMicroservice.AddChatToUser({
@@ -85,6 +104,12 @@ export class UserService implements OnModuleInit, UserServiceType {
         payload: RemoveChatFromUserRequest,
     ): Promise<RemoveChatFromUserResponse> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
+
             const addChat = await lastValueFrom(
                 from(
                     this.userMicroservice.RemoveChatFromUser({
@@ -118,6 +143,12 @@ export class UserService implements OnModuleInit, UserServiceType {
         payload: FindUserByIdRequest,
     ): Promise<Omit<FindUserByIdResponse, 'passwordHash'>> {
         try {
+            console.log(payload);
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const userInfo = await lastValueFrom(
                 from(
                     this.userMicroservice.FindUserById({
@@ -130,7 +161,7 @@ export class UserService implements OnModuleInit, UserServiceType {
                 throw new NotFoundException(errMessages.notFound.user);
             }
 
-            const userWithoutPassword = this.validateUser(userInfo.userData);
+            const userWithoutPassword = this.validateUserIds(userInfo.userData);
 
             return userWithoutPassword;
         } catch (e) {
@@ -148,40 +179,15 @@ export class UserService implements OnModuleInit, UserServiceType {
         }
     }
 
-    async FindUserByTag(
-        payload: FindUserByTagRequest,
-    ): Promise<Omit<FindUserByTagResponse, 'passwordHash'>> {
-        try {
-            const userInfo = await lastValueFrom(
-                from(this.userMicroservice.FindUserByTag({ tag: payload.tag })),
-            );
-
-            if (!userInfo.userData) {
-                throw new NotFoundException(errMessages.notFound.user);
-            }
-
-            const userWithoutPassword = this.validateUser(userInfo.userData);
-
-            return { userData: userWithoutPassword };
-        } catch (e) {
-            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
-                throw new RpcException({
-                    message: StatusClient.RPC_EXCEPTION.message,
-                    code: e.code,
-                });
-            }
-
-            throw new RpcException({
-                message: errMessages.findByTag,
-                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
-            });
-        }
-    }
-
     async FindUserByPhoneNumber(
         payload: FindUserByPhoneNumberRequest,
     ): Promise<Omit<FindUserByPhoneNumberResponse, 'userData.passwordHash'>> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const userInfo = await lastValueFrom(
                 from(
                     this.userMicroservice.FindUserByPhoneNumber({
@@ -216,6 +222,11 @@ export class UserService implements OnModuleInit, UserServiceType {
         payload: FindUserByEmailRequest,
     ): Promise<Omit<FindUserByEmailResponse, 'passwordHash'>> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const userInfo = await lastValueFrom(
                 from(
                     this.userMicroservice.FindUserByEmail({
@@ -250,6 +261,11 @@ export class UserService implements OnModuleInit, UserServiceType {
         payload: FindUserByUsernameRequest,
     ): Promise<FindUserByUsernameResponse> {
         try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
             const userInfo = await lastValueFrom(
                 from(
                     this.userMicroservice.FindUserByUsername({

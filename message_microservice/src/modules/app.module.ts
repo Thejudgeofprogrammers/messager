@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { MongooseModule } from '@nestjs/mongoose';
 import configuration from '../config/config.main';
+import { MessagerModule } from './messager/messager.module';
 
 @Module({
     imports: [
@@ -23,6 +24,7 @@ import configuration from '../config/config.main';
                 uri: configService.get<string>('mongo_uri'),
             }),
         }),
+        MessagerModule,
     ],
 })
 export class AppModule {}

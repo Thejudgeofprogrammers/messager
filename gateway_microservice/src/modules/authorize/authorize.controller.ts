@@ -3,17 +3,31 @@ import { Response } from 'express';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
 import {
-    LoginResponse,
     RegisterRequest,
     RegisterResponse,
 } from 'src/protos/proto_gen_files/auth';
 import { AuthorizeService } from './authorize.service';
 import { myOptionalCookieOptions } from 'src/config/config.cookie';
-import { LoginFormDTO, LogoutDTO } from './dto';
+import {
+    LoginFormDTO,
+    LoginResponseDTO,
+    LogoutRequestDTO,
+    LogoutResponseDTO,
+    RegisterFormDTO,
+    RegisterResponseDTO,
+} from './dto';
 import { StatusClient } from 'src/common/status';
 import { errMessages } from 'src/common/messages';
-import { RequirePayload } from 'src/common/decorators/requirePayload';
+import {
+    ApiBody,
+    ApiCookieAuth,
+    ApiOperation,
+    ApiResponse,
+    ApiTags,
+} from '@nestjs/swagger';
+import { loginDocs, logoutDocs, RegisterDocs } from 'src/common/api/auth';
 
+@ApiTags('Авторизация/Аутентификация')
 @Controller('auth')
 export class AuthorizeController {
     constructor(
@@ -39,11 +53,36 @@ export class AuthorizeController {
     ) {}
 
     @Post('login')
-    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @ApiOperation({
+        summary: 'Вход в аккаунт',
+        description: loginDocs,
+    })
+    @ApiCookieAuth()
+    @ApiResponse({
+        status: 200,
+        description: 'Выполнен вход. Установлены куки jwtToken и userId.',
+        type: LoginResponseDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для входа',
+        type: LoginFormDTO,
+    })
     async loginUser(
         @Body() payload: LoginFormDTO,
         @Res() res: Response,
-    ): Promise<Response<LoginResponse>> {
+    ): Promise<Response<LoginResponseDTO>> {
         const end = this.loginDuration.startTimer();
         try {
             const data = await this.authorizeService.loginUser(payload);
@@ -66,7 +105,27 @@ export class AuthorizeController {
     }
 
     @Post('register')
-    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @ApiOperation({
+        summary: 'Регистрация нового пользователя',
+        description: RegisterDocs,
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Пользователь зарегистрирован',
+        type: RegisterResponseDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для входа',
+        type: RegisterFormDTO,
+    })
     async registerUser(
         @Body() payload: RegisterRequest,
         @Res() res: Response,
@@ -77,7 +136,7 @@ export class AuthorizeController {
                 info: { message, status },
             } = await this.authorizeService.registerUser(payload);
             this.registerTotal.inc();
-            return res.json({ message, status });
+            return res.json(message).status(status);
         } catch (e) {
             return res
                 .json({ message: errMessages.registry, error: e.message })
@@ -88,11 +147,31 @@ export class AuthorizeController {
     }
 
     @Post('logout')
-    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @ApiOperation({
+        summary: 'Выход с аккаунта',
+        description: logoutDocs,
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Пользователь вышел с аккаунта',
+        type: LogoutResponseDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для выхода',
+        type: LogoutRequestDTO,
+    })
     async logoutUser(
-        @Body() payload: LogoutDTO,
+        @Body() payload: LogoutRequestDTO,
         @Res() res: Response,
-    ): Promise<Response<LogoutDTO>> {
+    ): Promise<Response<LogoutResponseDTO>> {
         const end = this.logoutDuration.startTimer();
         try {
             const data = await this.authorizeService.logoutUser(
@@ -103,7 +182,7 @@ export class AuthorizeController {
             res.clearCookie('jwtToken');
             res.clearCookie('userId');
             this.logoutTotal.inc();
-            return res.json({ message, status });
+            return res.json(message).status(status);
         } catch (e) {
             return res
                 .json({

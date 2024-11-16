@@ -4,7 +4,7 @@ import { Document } from 'mongoose';
 @Schema()
 export class ChatParticipant {
     @Prop({ type: Number, required: true })
-    user_id: number; // ID участника
+    user_id: number;
 
     @Prop({ type: String, required: true, enum: ['owner', 'admin', 'member'] })
     role: string;

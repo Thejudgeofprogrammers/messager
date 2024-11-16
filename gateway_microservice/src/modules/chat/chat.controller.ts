@@ -1,42 +1,94 @@
-import { Body, Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Post,
+    Req,
+    Res,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { errMessages } from 'src/common/messages';
 import { StatusClient } from 'src/common/status';
 import { ChatService } from './chat.service';
-import { RequirePayload } from 'src/common/decorators/requirePayload';
 import {
-    AddUserToChatRequest,
-    AddUserToChatResponse,
     CreateNewChatRequest,
-    CreateNewChatResponse,
     DeleteChatByIdRequest,
-    DeleteChatByIdResponse,
-    GetChatByChatNameRequest,
-    GetChatByChatNameResponse,
-    GetChatByIdRequest,
-    GetChatByIdResponse,
     LeaveFromChatRequest,
-    LeaveFromChatResponse,
     LoadToChatRequest,
-    LoadToChatResponse,
-    RemoveUserFromChatRequest,
-    RemoveUserFromChatResponse,
-    UpdateChatByIdRequest,
-    UpdateChatByIdResponse,
 } from 'src/protos/proto_gen_files/chat';
-import { RequireQueryPayload } from 'src/common/decorators/requireQueryPayload';
+import {
+    ApiBody,
+    ApiCookieAuth,
+    ApiOperation,
+    ApiResponse,
+} from '@nestjs/swagger';
+import {
+    AddUserToChatRequestDTO,
+    AddUserToChatResponsetDTO,
+    CreateNewChatRequestDTO,
+    CreateNewChatResponseDTO,
+    DeleteChatByIdRequestDTO,
+    DeleteChatByIdResponseDTO,
+    GetChatByChatNameRequestDTO,
+    GetChatByChatNameResponseDTO,
+    GetChatByIdRequestDTO,
+    GetChatByIdResponseDTO,
+    LeaveToChatRequestDTO,
+    LeaveToChatResponseDTO,
+    LoadToChatRequestDTO,
+    LoadToChatResponseDTO,
+    RemoveUserFromChatRequestDTO,
+    RemoveUserFromChatResponseDTO,
+    UpdateChatByIdRequestDTO,
+    UpdateChatByIdResponseDTO,
+} from './dto';
+import {
+    addUserToChatDocs,
+    CreateNewChatDocs,
+    deleteChatByIdDocs,
+    FindByIdDocs,
+    getChatByChatNameDocs,
+    JoinChatDocs,
+    LeaveChatDocs,
+    removeUserFromChatDocs,
+    updateChatByIdDocs,
+} from 'src/common/api/chat';
 
 @Controller('chat')
 export class ChatController {
     constructor(private readonly chatService: ChatService) {}
 
     @Post(':chatId/join/:userId')
-    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @ApiOperation({
+        summary: 'Добавить чат на аккаунт',
+        description: JoinChatDocs,
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 200,
+        description: 'Пользователь вошёл с аккаунта',
+        type: LoadToChatResponseDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для входа',
+        type: LoadToChatRequestDTO,
+    })
     async loadToChat(
-        @Body() payload: { chatId: string },
+        @Body() payload: LoadToChatRequestDTO,
         @Req() req: Request,
         @Res() res: Response,
-    ): Promise<Response<LoadToChatResponse>> {
+    ): Promise<Response<LoadToChatResponseDTO>> {
         try {
             const userId = +req.cookies['userId'];
             const updatedPayload: LoadToChatRequest = { ...payload, userId };
@@ -50,8 +102,8 @@ export class ChatController {
                     .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
             }
             return res
-                .status(methodData.response.status)
-                .json(methodData.response.message);
+                .json(methodData.response.message)
+                .status(methodData.response.status);
         } catch (e) {
             return res
                 .json({ message: errMessages.loadToChat })
@@ -60,12 +112,42 @@ export class ChatController {
     }
 
     @Post(':chatId/leave/:userId')
-    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @ApiOperation({
+        summary: 'Выход из чата',
+        description: LeaveChatDocs,
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 200,
+        description: 'Пользователь вышел с аккаунта',
+        type: LeaveToChatResponseDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'Ресурс не найден',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для выхода',
+        type: LeaveToChatRequestDTO,
+    })
     async leaveFromChat(
-        @Body() payload: { chatId: string },
+        @Body() payload: LeaveToChatRequestDTO,
         @Req() req: Request,
         @Res() res: Response,
-    ): Promise<Response<LeaveFromChatResponse>> {
+    ): Promise<Response<LeaveToChatResponseDTO>> {
         try {
             const userId = +req.cookies['userId'];
             const updatedPayload: LeaveFromChatRequest = { ...payload, userId };
@@ -80,8 +162,8 @@ export class ChatController {
                     .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
             }
             return res
-                .status(methodData.response.status)
-                .json(methodData.response.message);
+                .json(methodData.response.message)
+                .status(methodData.response.status);
         } catch (e) {
             return res
                 .json({ message: errMessages.leaveFromChat })
@@ -90,12 +172,38 @@ export class ChatController {
     }
 
     @Post('create')
-    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @ApiOperation({
+        summary: 'Создание чата',
+        description: CreateNewChatDocs,
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 201,
+        description: 'Пользователь создал чат',
+        type: CreateNewChatResponseDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для создания чата',
+        type: CreateNewChatRequestDTO,
+    })
     async createNewChat(
-        @Body() payload: Omit<CreateNewChatRequest, 'userId'>,
+        @Body() payload: CreateNewChatRequestDTO,
         @Req() req: Request,
         @Res() res: Response,
-    ): Promise<Response<CreateNewChatResponse>> {
+    ): Promise<Response<CreateNewChatResponseDTO>> {
         try {
             const userId = +req.cookies['userId'];
             const updatedPayload: CreateNewChatRequest = { ...payload, userId };
@@ -109,8 +217,8 @@ export class ChatController {
                     .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
             }
             return res
-                .status(StatusClient.HTTP_STATUS_OK.status)
-                .json(methodData.chatId);
+                .json({ chatId: methodData.chatId })
+                .status(StatusClient.HTTP_STATUS_OK.status);
         } catch (e) {
             return res
                 .json({ message: errMessages.createNewChat })
@@ -118,14 +226,44 @@ export class ChatController {
         }
     }
 
-    @Get(':chatId')
-    @RequireQueryPayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @Get('chatId/:chatId')
+    @ApiOperation({
+        summary: 'Пойск чата по id',
+        description: FindByIdDocs,
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 200,
+        description: 'Чат найден',
+        type: GetChatByIdResponseDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'Чат не найден',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для поиска чата по id',
+        type: GetChatByIdRequestDTO,
+    })
     async getChatById(
-        @Query() data: GetChatByIdRequest,
+        @Param('chatId') chatId: GetChatByIdRequestDTO,
         @Res() res: Response,
-    ): Promise<Response<GetChatByIdResponse>> {
+    ): Promise<Response<GetChatByIdResponseDTO>> {
         try {
-            const methodData = await this.chatService.GetChatById(data);
+            const methodData = await this.chatService.GetChatById(chatId);
             if (!methodData) {
                 return res
                     .json({
@@ -134,23 +272,55 @@ export class ChatController {
                     .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
             }
             return res
-                .status(StatusClient.HTTP_STATUS_OK.status)
-                .json(methodData.chatData);
+                .json(methodData.chatData)
+                .status(StatusClient.HTTP_STATUS_OK.status);
         } catch (e) {
+            console.error(e);
             return res
                 .json({ message: errMessages.getChatById })
                 .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
         }
     }
 
-    @Get(':username')
-    @RequireQueryPayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @Get('chatName/:chatName')
+    @ApiOperation({
+        summary: 'Пойск чата по username',
+        description: getChatByChatNameDocs,
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 200,
+        description: 'Чат найден',
+        type: [GetChatByChatNameResponseDTO],
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'Нет такого чата',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для поиска по username',
+        type: GetChatByChatNameRequestDTO,
+    })
     async getChatByChatName(
-        @Query() data: GetChatByChatNameRequest,
+        @Param('chatName') chatName: GetChatByChatNameRequestDTO,
         @Res() res: Response,
-    ): Promise<Response<GetChatByChatNameResponse>> {
+    ): Promise<Response<GetChatByChatNameResponseDTO[]>> {
         try {
-            const methodData = await this.chatService.GetChatByChatName(data);
+            const methodData =
+                await this.chatService.GetChatByChatName(chatName);
             if (!methodData) {
                 return res
                     .json({
@@ -159,8 +329,8 @@ export class ChatController {
                     .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
             }
             return res
-                .status(StatusClient.HTTP_STATUS_OK.status)
-                .json(methodData.chatData);
+                .json(methodData.chatData)
+                .status(StatusClient.HTTP_STATUS_OK.status);
         } catch (e) {
             return res
                 .json({ message: errMessages.getChatByChatName })
@@ -169,11 +339,45 @@ export class ChatController {
     }
 
     @Post('update/:chatId')
-    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @ApiOperation({
+        summary: 'Изменить информацию о чате',
+        description: updateChatByIdDocs,
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 200,
+        description: 'Чат обновлен',
+        type: UpdateChatByIdResponseDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 403,
+        description: 'Недостаточно прав',
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'Нет такого чата',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для изменения информации о чате',
+        type: UpdateChatByIdRequestDTO,
+    })
     async updateChatById(
-        @Body() payload: UpdateChatByIdRequest,
+        @Body() payload: UpdateChatByIdRequestDTO,
         @Res() res: Response,
-    ): Promise<Response<UpdateChatByIdResponse>> {
+    ): Promise<Response<UpdateChatByIdResponseDTO>> {
         try {
             const methodData = await this.chatService.UpdateChatById(payload);
             if (!methodData) {
@@ -193,14 +397,55 @@ export class ChatController {
         }
     }
 
-    @Post('delete/:chatId')
-    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @Delete('delete/:chatId')
+    @ApiOperation({
+        summary: 'Удаление чата',
+        description: deleteChatByIdDocs,
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 200,
+        description: 'Чат удалён',
+        type: DeleteChatByIdResponseDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 403,
+        description: 'Недостаточно прав',
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'Нет такого чата',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для удаления чата',
+        type: DeleteChatByIdRequestDTO,
+    })
     async deleteChatById(
-        @Body() payload: DeleteChatByIdRequest,
+        @Param('chatId') payload: DeleteChatByIdRequestDTO,
+        @Req() req: Request,
         @Res() res: Response,
-    ): Promise<Response<DeleteChatByIdResponse>> {
+    ): Promise<Response<DeleteChatByIdResponseDTO>> {
         try {
-            const methodData = await this.chatService.DeleteChatById(payload);
+            const { userId } = req.cookies;
+            const validateUserId = +userId;
+            const data: DeleteChatByIdRequest = {
+                chatId: payload.toString(),
+                userId: validateUserId,
+            };
+            const methodData = await this.chatService.DeleteChatById(data);
             if (!methodData) {
                 return res
                     .json({
@@ -208,9 +453,7 @@ export class ChatController {
                     })
                     .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
             }
-            return res
-                .json(methodData.response.message)
-                .status(methodData.response.status);
+            return res.json(methodData.message).status(200);
         } catch (e) {
             return res
                 .json({ message: errMessages.deleteChatById })
@@ -219,11 +462,41 @@ export class ChatController {
     }
 
     @Post(':chatId/add/:userId')
-    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @ApiOperation({
+        summary: 'Добавление пользователя в чат',
+        description: addUserToChatDocs,
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 200,
+        description: 'Пользователь добавлен',
+        type: AddUserToChatResponsetDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'Пользователь не найден',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для добавления пользователя в чат',
+        type: AddUserToChatRequestDTO,
+    })
     async addUserToChat(
-        @Body() payload: AddUserToChatRequest,
+        @Body() payload: AddUserToChatRequestDTO,
         @Res() res: Response,
-    ): Promise<Response<AddUserToChatResponse>> {
+    ): Promise<Response<AddUserToChatResponsetDTO>> {
         try {
             const methodData = await this.chatService.AddUserToChat(payload);
             if (!methodData) {
@@ -244,11 +517,41 @@ export class ChatController {
     }
 
     @Post(':chatId/del/:userId')
-    @RequirePayload(StatusClient.HTTP_STATUS_BAD_REQUEST)
+    @ApiOperation({
+        summary: 'Удаление из чата пользователя',
+        description: removeUserFromChatDocs,
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 200,
+        description: 'Пользователь удалён из чата',
+        type: RemoveUserFromChatResponseDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'Пользователь не найден',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для удаления пользователя из чата',
+        type: RemoveUserFromChatRequestDTO,
+    })
     async RemoveUserFromChat(
-        @Body() payload: RemoveUserFromChatRequest,
+        @Body() payload: RemoveUserFromChatRequestDTO,
         @Res() res: Response,
-    ): Promise<Response<RemoveUserFromChatResponse>> {
+    ): Promise<Response<RemoveUserFromChatResponseDTO>> {
         try {
             const methodData =
                 await this.chatService.RemoveUserFromChat(payload);

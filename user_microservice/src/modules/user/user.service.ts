@@ -15,15 +15,15 @@ import {
     FindUserByPhoneNumberRequest,
     FindUserByPhoneNumberResponse,
     FindUserByUsernameRequest,
-    FindUserByTagRequest,
     FindUserByUsernameResponse,
-    FindUserByTagResponse,
     CreateNewUserRequest,
     CreateNewUserResponse,
     RemoveChatFromUserRequest,
     RemoveChatFromUserResponse,
     AddChatToUserResponse,
     AddChatToUserRequest,
+    RemoveArrayChatRequest,
+    RemoveArrayChatResponse,
 } from '../../protos/proto_gen_files/user';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
@@ -43,6 +43,50 @@ export class UserService implements UserInterfase {
         @InjectMetric('PROM_METRIC_USER_FIND_DURATION')
         private readonly findUserDuration: Histogram<string>,
     ) {}
+
+    @GrpcMethod('UserService', 'RemoveArrayChat')
+    async RemoveArrayChat(
+        request: RemoveArrayChatRequest,
+    ): Promise<RemoveArrayChatResponse> {
+        try {
+            console.log(request);
+
+            if (!request.chatId || !request.data) {
+                throw new BadRequestException('chatId or UserArray notFound!');
+            }
+            const { chatId, data: userIds } = request;
+            console.log(chatId);
+            console.log(userIds);
+            for (const { userId } of userIds) {
+                const user = await this.prismaService.user.findUnique({
+                    where: { user_id: +userId },
+                });
+
+                if (!user) {
+                    console.warn(`User with id ${userId} not found!`);
+                    continue;
+                }
+
+                const updatedChatReferences = user.chatReferences.filter(
+                    (id) => id !== chatId,
+                );
+
+                await this.prismaService.user.update({
+                    where: { user_id: +userId },
+                    data: { chatReferences: updatedChatReferences },
+                });
+            }
+
+            return {
+                status: 200,
+                message: `ChatId ${chatId} was successfully removed for specified users.`,
+            };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+            );
+        }
+    }
 
     @GrpcMethod('UserService', 'AddChatToUser')
     async AddChatToUser(
@@ -190,6 +234,7 @@ export class UserService implements UserInterfase {
         const end = this.findUserDuration.startTimer();
         try {
             const { userId } = request;
+            console.log(userId);
             const existUser = await this.prismaService.findUserById(userId);
 
             if (!existUser) {
@@ -206,7 +251,6 @@ export class UserService implements UserInterfase {
                     userId: existUser.user_id,
                     phoneNumber: existUser.phone_number,
                     email: existUser.email,
-                    tag: existUser.tag,
                     passwordHash: existUser.password_hash,
                     username: existUser.username,
                     chatReferences: existUser.chatReferences,
@@ -251,42 +295,6 @@ export class UserService implements UserInterfase {
         }
     }
 
-    @GrpcMethod('UserService', 'FindUserByTag')
-    async FindUserByTag(
-        request: FindUserByTagRequest,
-    ): Promise<FindUserByTagResponse> {
-        const end = this.findUserDuration.startTimer();
-        try {
-            const { tag } = request;
-            const existUser = await this.prismaService.findUserByTag(tag);
-
-            if (!existUser) {
-                return {
-                    notFound: {
-                        message: 'User not found',
-                        status: 404,
-                    },
-                };
-            }
-
-            return {
-                userData: {
-                    userId: existUser.user_id,
-                    phoneNumber: existUser.phone_number,
-                    email: existUser.email,
-                    tag: existUser.tag,
-                    passwordHash: existUser.password_hash,
-                    username: existUser.username,
-                },
-            };
-        } catch (e) {
-            console.error('Error in FindUserByEmail:', e);
-            throw new InternalServerErrorException('Server error occurred');
-        } finally {
-            end();
-        }
-    }
-
     @GrpcMethod('UserService', 'FindUserByEmail')
     async FindUserByEmail(
         request: FindUserByEmailRequest,
@@ -312,7 +320,6 @@ export class UserService implements UserInterfase {
                     userId: existUser.user_id,
                     phoneNumber: existUser.phone_number,
                     email: existUser.email,
-                    tag: existUser.tag,
                     passwordHash: existUser.password_hash,
                     username: existUser.username,
                 },
@@ -350,7 +357,6 @@ export class UserService implements UserInterfase {
                     userId: existUser.user_id,
                     phoneNumber: existUser.phone_number,
                     email: existUser.email,
-                    tag: existUser.tag,
                     passwordHash: existUser.password_hash,
                     username: existUser.username,
                 },
