@@ -1,6 +1,7 @@
 import {
     BadRequestException,
     Injectable,
+    InternalServerErrorException,
     OnModuleInit,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -18,13 +19,15 @@ import {
 import {
     CreateNewUserResponse,
     FindUserByPhoneNumberResponse,
+    RemoveAccountResponse,
     UserService as UserInterface,
 } from 'src/protos/proto_gen_files/user';
 import { grpcClientOptionsSessionUser } from 'src/config/grpc/grpc.options';
 import { SessionUserService } from 'src/protos/proto_gen_files/session_user';
-import { LoginFormDTO } from './dto';
+import { LoginFormDTO, RemoveAccountRequestDTO } from './dto';
 import { StatusClient } from 'src/common/status';
 import { errMessages } from 'src/common/messages';
+import { UserService as UserServiceGateway } from '../user/user.service';
 
 @Injectable()
 export class AuthorizeService implements OnModuleInit {
@@ -39,6 +42,8 @@ export class AuthorizeService implements OnModuleInit {
     private userMicroservice: UserInterface;
     private sessionUserMicroservice: SessionUserService;
 
+    constructor(private readonly userServiceGateway: UserServiceGateway) {}
+
     onModuleInit() {
         this.authMicroservice =
             this.authClient.getService<AuthService>('AuthService');
@@ -50,6 +55,43 @@ export class AuthorizeService implements OnModuleInit {
             this.sessionUserClient.getService<SessionUserService>(
                 'SessionUserService',
             );
+    }
+
+    async DeleteUser(
+        payload: RemoveAccountRequestDTO,
+    ): Promise<RemoveAccountResponse> {
+        try {
+            if (!payload.userId || !payload.password) {
+                throw new BadRequestException('Недостаточно данных');
+            }
+
+            const userId: number = +payload.userId;
+
+            const dataUser = await this.userServiceGateway.GetPasswordUser({
+                userId,
+            });
+
+            const existPassword = await lastValueFrom(
+                from(
+                    this.authMicroservice.CheckPassword({
+                        password: payload.password,
+                        hashedPassword: dataUser.hashedPassword,
+                    }),
+                ),
+            );
+
+            if (existPassword.exist == true) {
+                throw new UnauthorizedException('Password not verify');
+            }
+
+            const delUser = await this.userServiceGateway.RemoveAccount({
+                userId,
+            });
+
+            return { message: delUser.message };
+        } catch (e) {
+            throw new InternalServerErrorException('Ошибка');
+        }
     }
 
     async registerUser(

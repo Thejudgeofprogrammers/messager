@@ -1,6 +1,7 @@
 import {
     BadRequestException,
     Injectable,
+    InternalServerErrorException,
     NotFoundException,
     OnModuleInit,
 } from '@nestjs/common';
@@ -22,6 +23,10 @@ import {
     RemoveChatFromUserResponse,
     UserDataId,
     UserData,
+    RemoveAccountRequest,
+    RemoveAccountResponse,
+    GetPasswordUserRequest,
+    GetPasswordUserResponse,
 } from 'src/protos/proto_gen_files/user';
 import { grpcClientOptionsUser } from 'src/config/grpc/grpc.options';
 import { StatusClient } from 'src/common/status';
@@ -60,6 +65,74 @@ export class UserService implements OnModuleInit {
             phoneNumber: payload.phoneNumber,
         };
         return validateUser;
+    }
+
+    async RemoveAccount(
+        payload: RemoveAccountRequest,
+    ): Promise<RemoveAccountResponse> {
+        try {
+            const delUser = await lastValueFrom(
+                from(
+                    this.userMicroservice.RemoveAccount({
+                        userId: payload.userId,
+                    }),
+                ),
+            );
+
+            if (!delUser.message) {
+                throw new InternalServerErrorException('Ошибка сервера');
+            }
+
+            return { message: delUser.message };
+        } catch (e) {
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.findUserById,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
+        }
+    }
+
+    async GetPasswordUser(
+        payload: GetPasswordUserRequest,
+    ): Promise<GetPasswordUserResponse> {
+        try {
+            if (!payload.userId) {
+                throw new BadRequestException('without userId');
+            }
+
+            const userPassword = await lastValueFrom(
+                from(
+                    this.userMicroservice.GetPasswordUser({
+                        userId: payload.userId,
+                    }),
+                ),
+            );
+
+            if (!userPassword) {
+                throw new NotFoundException('Password without');
+            }
+
+            return { hashedPassword: userPassword.hashedPassword };
+        } catch (e) {
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.findUserById,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
+        }
     }
 
     async AddChatToUser(

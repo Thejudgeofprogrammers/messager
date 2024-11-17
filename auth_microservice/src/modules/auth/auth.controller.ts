@@ -15,6 +15,8 @@ import {
     RegisterResponse,
     LoginRequest,
     LoginResponse,
+    CheckPasswordRequest,
+    CheckPasswordResponse,
 } from '../../protos/proto_gen_files/auth';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
@@ -37,6 +39,28 @@ export class AuthService implements AuthInterface {
         @InjectMetric('PROM_METRIC_AUTH_REGISTER_TOTAL')
         private readonly registerTotal: Counter<string>,
     ) {}
+
+    @GrpcMethod('AuthService', 'CheckPassword')
+    async CheckPassword(
+        payload: CheckPasswordRequest,
+    ): Promise<CheckPasswordResponse> {
+        try {
+            if (!payload.hashedPassword || !payload.password) {
+                throw new BadRequestException('Data without');
+            }
+
+            const booleanAnswer = await this.cryptService.comparePassword(
+                payload.password,
+                payload.hashedPassword,
+            );
+
+            return { exist: booleanAnswer };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                `${StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message}: ${e}`,
+            );
+        }
+    }
 
     @GrpcMethod('AuthService', 'Register')
     async Register(data: RegisterRequest): Promise<RegisterResponse> {

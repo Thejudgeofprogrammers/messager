@@ -9,6 +9,22 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "user";
 
+export interface GetPasswordUserRequest {
+  userId: number;
+}
+
+export interface GetPasswordUserResponse {
+  hashedPassword: string;
+}
+
+export interface RemoveAccountRequest {
+  userId: number;
+}
+
+export interface RemoveAccountResponse {
+  message: string;
+}
+
 export interface RemoveArrayChatRequest {
   chatId: string;
   data: ArrayLinkUsers[];
@@ -118,6 +134,238 @@ export interface UserArray {
   userId: number;
   username: string;
 }
+
+function createBaseGetPasswordUserRequest(): GetPasswordUserRequest {
+  return { userId: 0 };
+}
+
+export const GetPasswordUserRequest: MessageFns<GetPasswordUserRequest> = {
+  encode(message: GetPasswordUserRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetPasswordUserRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetPasswordUserRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetPasswordUserRequest {
+    return { userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0 };
+  },
+
+  toJSON(message: GetPasswordUserRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetPasswordUserRequest>, I>>(base?: I): GetPasswordUserRequest {
+    return GetPasswordUserRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetPasswordUserRequest>, I>>(object: I): GetPasswordUserRequest {
+    const message = createBaseGetPasswordUserRequest();
+    message.userId = object.userId ?? 0;
+    return message;
+  },
+};
+
+function createBaseGetPasswordUserResponse(): GetPasswordUserResponse {
+  return { hashedPassword: "" };
+}
+
+export const GetPasswordUserResponse: MessageFns<GetPasswordUserResponse> = {
+  encode(message: GetPasswordUserResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.hashedPassword !== "") {
+      writer.uint32(10).string(message.hashedPassword);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetPasswordUserResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetPasswordUserResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.hashedPassword = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetPasswordUserResponse {
+    return { hashedPassword: isSet(object.hashedPassword) ? globalThis.String(object.hashedPassword) : "" };
+  },
+
+  toJSON(message: GetPasswordUserResponse): unknown {
+    const obj: any = {};
+    if (message.hashedPassword !== "") {
+      obj.hashedPassword = message.hashedPassword;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetPasswordUserResponse>, I>>(base?: I): GetPasswordUserResponse {
+    return GetPasswordUserResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetPasswordUserResponse>, I>>(object: I): GetPasswordUserResponse {
+    const message = createBaseGetPasswordUserResponse();
+    message.hashedPassword = object.hashedPassword ?? "";
+    return message;
+  },
+};
+
+function createBaseRemoveAccountRequest(): RemoveAccountRequest {
+  return { userId: 0 };
+}
+
+export const RemoveAccountRequest: MessageFns<RemoveAccountRequest> = {
+  encode(message: RemoveAccountRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RemoveAccountRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRemoveAccountRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RemoveAccountRequest {
+    return { userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0 };
+  },
+
+  toJSON(message: RemoveAccountRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RemoveAccountRequest>, I>>(base?: I): RemoveAccountRequest {
+    return RemoveAccountRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RemoveAccountRequest>, I>>(object: I): RemoveAccountRequest {
+    const message = createBaseRemoveAccountRequest();
+    message.userId = object.userId ?? 0;
+    return message;
+  },
+};
+
+function createBaseRemoveAccountResponse(): RemoveAccountResponse {
+  return { message: "" };
+}
+
+export const RemoveAccountResponse: MessageFns<RemoveAccountResponse> = {
+  encode(message: RemoveAccountResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RemoveAccountResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRemoveAccountResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RemoveAccountResponse {
+    return { message: isSet(object.message) ? globalThis.String(object.message) : "" };
+  },
+
+  toJSON(message: RemoveAccountResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RemoveAccountResponse>, I>>(base?: I): RemoveAccountResponse {
+    return RemoveAccountResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RemoveAccountResponse>, I>>(object: I): RemoveAccountResponse {
+    const message = createBaseRemoveAccountResponse();
+    message.message = object.message ?? "";
+    return message;
+  },
+};
 
 function createBaseRemoveArrayChatRequest(): RemoveArrayChatRequest {
   return { chatId: "", data: [] };
@@ -1814,6 +2062,8 @@ export interface UserService {
   AddChatToUser(request: AddChatToUserRequest): Promise<AddChatToUserResponse>;
   RemoveChatFromUser(request: RemoveChatFromUserRequest): Promise<RemoveChatFromUserResponse>;
   RemoveArrayChat(request: RemoveArrayChatRequest): Promise<RemoveArrayChatResponse>;
+  RemoveAccount(request: RemoveAccountRequest): Promise<RemoveAccountResponse>;
+  GetPasswordUser(request: GetPasswordUserRequest): Promise<GetPasswordUserResponse>;
 }
 
 export const UserServiceServiceName = "user.UserService";
@@ -1831,6 +2081,8 @@ export class UserServiceClientImpl implements UserService {
     this.AddChatToUser = this.AddChatToUser.bind(this);
     this.RemoveChatFromUser = this.RemoveChatFromUser.bind(this);
     this.RemoveArrayChat = this.RemoveArrayChat.bind(this);
+    this.RemoveAccount = this.RemoveAccount.bind(this);
+    this.GetPasswordUser = this.GetPasswordUser.bind(this);
   }
   CreateNewUser(request: CreateNewUserRequest): Promise<CreateNewUserResponse> {
     const data = CreateNewUserRequest.encode(request).finish();
@@ -1878,6 +2130,18 @@ export class UserServiceClientImpl implements UserService {
     const data = RemoveArrayChatRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "RemoveArrayChat", data);
     return promise.then((data) => RemoveArrayChatResponse.decode(new BinaryReader(data)));
+  }
+
+  RemoveAccount(request: RemoveAccountRequest): Promise<RemoveAccountResponse> {
+    const data = RemoveAccountRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "RemoveAccount", data);
+    return promise.then((data) => RemoveAccountResponse.decode(new BinaryReader(data)));
+  }
+
+  GetPasswordUser(request: GetPasswordUserRequest): Promise<GetPasswordUserResponse> {
+    const data = GetPasswordUserRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "GetPasswordUser", data);
+    return promise.then((data) => GetPasswordUserResponse.decode(new BinaryReader(data)));
   }
 }
 

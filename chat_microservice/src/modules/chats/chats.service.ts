@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Controller,
     ForbiddenException,
     InternalServerErrorException,
@@ -26,6 +27,8 @@ import {
     GetChatByIdResponse,
     RemoveUserFromChatRequest,
     RemoveUserFromChatResponse,
+    UpdateChatByIdRequest,
+    UpdateChatByIdResponse,
 } from 'src/protos/proto_gen_files/chat';
 import { Message, MessageDocument } from './schemas/Message';
 
@@ -81,6 +84,7 @@ export class ChatService {
                     sender_id: userId,
                     preview: pre,
                 },
+                description: '',
                 participants: [newParticipant._id],
                 messages: [newMessage._id],
             };
@@ -187,8 +191,45 @@ export class ChatService {
     }
 
     @GrpcMethod('ChatService', 'UpdateChatById')
-    async UpdateChatById() {
+    async UpdateChatById(
+        payload: UpdateChatByIdRequest,
+    ): Promise<UpdateChatByIdResponse> {
         try {
+            if (!payload.chatId) {
+                throw new BadRequestException('chatId without');
+            }
+
+            console.log(payload);
+
+            const { chatId, chatName, chatType, description } = payload;
+
+            const chat = await this.chatModel.findById(
+                new Types.ObjectId(chatId),
+            );
+
+            console.log('chat');
+            console.log(chat);
+
+            if (!chat) {
+                throw new NotFoundException(`Чат с ID ${chatId} не найден`);
+            }
+
+            if (chatName) chat.chatName = chatName;
+            if (chatType) chat.chatType = chatType;
+            if (description !== undefined) {
+                chat.description = description;
+            } else if (!chat.description) {
+                throw new BadRequestException('description is required');
+            }
+
+            await chat.save();
+
+            return {
+                response: {
+                    message: `Чат с ID ${chatId} успешно обновлён`,
+                    status: 200,
+                },
+            };
         } catch (e) {
             this.logger.error(
                 `Ошибка при создании чата: ${e.message}`,
@@ -323,15 +364,18 @@ export class ChatService {
         payload: RemoveUserFromChatRequest,
     ): Promise<RemoveUserFromChatResponse> {
         try {
-            const chat = await this.chatModel.findById(payload.chatId);
+            const chat = await this.chatModel
+                .findById(new Types.ObjectId(payload.chatId))
+                .populate('participants');
+
             if (!chat) {
                 throw new InternalServerErrorException('Чат не найден');
             }
 
             const participantIndex = chat.participants.findIndex(
-                (participant) =>
-                    participant.toString() === payload.userId.toString(),
+                (participant: any) => participant.user_id === payload.userId,
             );
+
             if (participantIndex === -1) {
                 throw new InternalServerErrorException(
                     'Пользователь не найден в чате',
@@ -349,7 +393,7 @@ export class ChatService {
             };
         } catch (e) {
             this.logger.error(
-                `Ошибка при создании чата: ${e.message}`,
+                `Ошибка при удалении пользователя из чата: ${e.message}`,
                 e.stack,
             );
             throw new InternalServerErrorException(

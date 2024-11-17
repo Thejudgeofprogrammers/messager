@@ -42,8 +42,6 @@ import {
     ArrayLinkUsers,
     RemoveArrayChatRequest,
     RemoveArrayChatResponse,
-    // RemoveArrayChatRequest,
-    // RemoveArrayChatResponse,
     UserService as UserServiceClient,
 } from 'src/protos/proto_gen_files/user';
 import { DeleteChatByIdResponseDTO } from './dto';
@@ -124,7 +122,8 @@ export class ChatService implements OnModuleInit {
                     StatusClient.HTTP_STATUS_BAD_REQUEST.message,
                 );
             }
-            const userAdd = await this.userService.AddChatToUser({
+
+            const userAdd = await this.userService.RemoveChatFromUser({
                 userId: +payload.userId,
                 chatId: payload.chatId,
             });
@@ -135,12 +134,17 @@ export class ChatService implements OnModuleInit {
 
             const chatAdd = await lastValueFrom(
                 from(
-                    this.chatMicroservice.LeaveFromChat({
-                        userId: payload.userId,
+                    this.chatMicroservice.RemoveUserFromChat({
+                        userId: +payload.userId,
                         chatId: payload.chatId,
                     }),
                 ),
             );
+
+            if (!chatAdd.response) {
+                throw new InternalServerErrorException('Ошибка сервера');
+            }
+
             const response = {
                 message: chatAdd.response.message,
                 status: 200,
@@ -296,22 +300,30 @@ export class ChatService implements OnModuleInit {
                     StatusClient.HTTP_STATUS_BAD_REQUEST.message,
                 );
             }
-            const chatInfo = await lastValueFrom(
-                from(
-                    this.chatMicroservice.UpdateChatById({
-                        chatId: payload.chatId,
-                        chatName: payload.chatName,
-                        chatType: payload.chatType,
-                        description: payload.description,
-                    }),
-                ),
-            );
 
-            if (!chatInfo) {
-                throw new NotFoundException(errMessages.notFound.chat);
+            if (
+                payload.chatType === 'private' ||
+                payload.chatType === 'group'
+            ) {
+                const chatInfo = await lastValueFrom(
+                    from(
+                        this.chatMicroservice.UpdateChatById({
+                            chatId: payload.chatId,
+                            chatName: payload.chatName,
+                            chatType: payload.chatType,
+                            description: payload.description,
+                        }),
+                    ),
+                );
+
+                if (!chatInfo) {
+                    throw new NotFoundException(errMessages.notFound.chat);
+                }
+
+                return chatInfo;
+            } else {
+                throw new BadRequestException('private or group');
             }
-
-            return chatInfo;
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
@@ -352,8 +364,6 @@ export class ChatService implements OnModuleInit {
                 from(this.chatMicroservice.DeleteChatById(chatInfoData)),
             );
 
-            console.log('chatInfo:', chatInfo);
-
             if (!chatInfo) {
                 throw new NotFoundException(errMessages.notFound.chat);
             }
@@ -384,10 +394,10 @@ export class ChatService implements OnModuleInit {
                 );
             }
 
-            // Возвращаем сообщение об успешном удалении
             const msg = {
                 message: chatParticipantDel.message.toString(),
             };
+
             return msg;
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {

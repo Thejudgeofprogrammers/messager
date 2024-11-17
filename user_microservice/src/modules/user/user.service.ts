@@ -24,6 +24,10 @@ import {
     AddChatToUserRequest,
     RemoveArrayChatRequest,
     RemoveArrayChatResponse,
+    RemoveAccountRequest,
+    RemoveAccountResponse,
+    GetPasswordUserRequest,
+    GetPasswordUserResponse,
 } from '../../protos/proto_gen_files/user';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
@@ -44,19 +48,69 @@ export class UserService implements UserInterfase {
         private readonly findUserDuration: Histogram<string>,
     ) {}
 
+    @GrpcMethod('UserService', 'GetPasswordUser')
+    async GetPasswordUser(
+        payload: GetPasswordUserRequest,
+    ): Promise<GetPasswordUserResponse> {
+        try {
+            if (!payload.userId) {
+                throw new BadRequestException('payload without');
+            }
+
+            const existUser = await this.prismaService.findUserById(
+                payload.userId,
+            );
+
+            if (!existUser) {
+                throw new NotFoundException('User not Found');
+            }
+
+            return { hashedPassword: existUser.password_hash };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+            );
+        }
+    }
+
+    @GrpcMethod('UserService', 'RemoveAccount')
+    async RemoveAccount(
+        request: RemoveAccountRequest,
+    ): Promise<RemoveAccountResponse> {
+        try {
+            if (!request.userId) {
+                throw new BadRequestException('Не получена информация');
+            }
+
+            const { userId } = request;
+
+            const user = await this.prismaService.user.delete({
+                where: { user_id: userId },
+            });
+
+            if (!user) {
+                throw new NotFoundException(
+                    `Пользователь с id ${userId} не найден`,
+                );
+            }
+
+            return { message: 'User delete' };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+            );
+        }
+    }
+
     @GrpcMethod('UserService', 'RemoveArrayChat')
     async RemoveArrayChat(
         request: RemoveArrayChatRequest,
     ): Promise<RemoveArrayChatResponse> {
         try {
-            console.log(request);
-
             if (!request.chatId || !request.data) {
                 throw new BadRequestException('chatId or UserArray notFound!');
             }
             const { chatId, data: userIds } = request;
-            console.log(chatId);
-            console.log(userIds);
             for (const { userId } of userIds) {
                 const user = await this.prismaService.user.findUnique({
                     where: { user_id: +userId },
