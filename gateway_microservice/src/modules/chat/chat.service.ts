@@ -23,10 +23,14 @@ import {
     GetChatByChatNameResponse,
     GetChatByIdRequest,
     GetChatByIdResponse,
+    KickUserFromChatRequest,
+    KickUserFromChatResponse,
     LeaveFromChatRequest,
     LeaveFromChatResponse,
     LoadToChatRequest,
     LoadToChatResponse,
+    PermissionToMemberRequest,
+    PermissionToMemberResponse,
     RemoveUserFromChatRequest,
     RemoveUserFromChatResponse,
     UpdateChatByIdRequest,
@@ -65,6 +69,130 @@ export class ChatService implements OnModuleInit {
             this.userClient.getService<UserServiceClient>('UserService');
     }
 
+    async KickUserFromChat(
+        payload: KickUserFromChatRequest,
+    ): Promise<KickUserFromChatResponse> {
+        try {
+            if (!payload.chatId || !payload.participantId || !payload.userId) {
+                throw new BadRequestException('Не все данные получены');
+            }
+
+            const kickUser = await lastValueFrom(
+                from(
+                    this.chatMicroservice.KickUserFromChat({
+                        participantId: payload.participantId,
+                        chatId: payload.chatId,
+                        userId: payload.userId,
+                    }),
+                ),
+            );
+
+            if (!kickUser) {
+                throw new InternalServerErrorException('Ошибка сервера');
+            }
+
+            return { message: kickUser.message, status: kickUser.status };
+        } catch (e) {
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.loadToChat,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
+        }
+    }
+
+    async PermissionToAdmin(
+        payload: PermissionToMemberRequest,
+    ): Promise<PermissionToMemberResponse> {
+        try {
+            if (!payload.chatId || !payload.participantId || !payload.userId) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
+
+            const chatSwithPermission = await lastValueFrom(
+                from(
+                    this.chatMicroservice.PermissionToAdmin({
+                        participantId: payload.participantId,
+                        chatId: payload.chatId,
+                        userId: payload.userId,
+                    }),
+                ),
+            );
+
+            if (!chatSwithPermission) {
+                throw new BadRequestException('Ошибка сервера');
+            }
+
+            return {
+                message: chatSwithPermission.message,
+                status: chatSwithPermission.status,
+            };
+        } catch (e) {
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.loadToChat,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
+        }
+    }
+
+    async PermissionToMember(
+        payload: PermissionToMemberRequest,
+    ): Promise<PermissionToMemberResponse> {
+        try {
+            if (!payload) {
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
+
+            const chatSwithPermission = await lastValueFrom(
+                from(
+                    this.chatMicroservice.PermissionToMember({
+                        participantId: payload.participantId,
+                        chatId: payload.chatId,
+                        userId: payload.userId,
+                    }),
+                ),
+            );
+
+            if (!chatSwithPermission) {
+                throw new BadRequestException('Ошибка сервера');
+            }
+
+            return {
+                message: chatSwithPermission.message,
+                status: chatSwithPermission.status,
+            };
+        } catch (e) {
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.loadToChat,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
+        }
+    }
+
     async LoadToChat(payload: LoadToChatRequest): Promise<LoadToChatResponse> {
         try {
             if (!payload) {
@@ -92,9 +220,14 @@ export class ChatService implements OnModuleInit {
                     }),
                 ),
             );
+
+            if (!chatAdd) {
+                throw new BadRequestException('Ошибка сервера');
+            }
+
             const response = {
                 message: chatAdd.response.message,
-                status: 200,
+                status: chatAdd.response.status,
             };
 
             return { response };

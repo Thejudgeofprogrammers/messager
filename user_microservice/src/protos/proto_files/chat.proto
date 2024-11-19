@@ -12,11 +12,23 @@ service ChatService {
     rpc UpdateChatById(UpdateChatByIdRequest) returns (UpdateChatByIdResponse);
     rpc DeleteChatById(DeleteChatByIdRequest) returns (DeleteChatByIdResponse);
     rpc AddUserToChat(AddUserToChatRequest) returns (AddUserToChatResponse);
-    rpc RemoveUserFromChat(RemoveUserFromChatRequest) returns (RemoveUserFromChatResponse);
     rpc LoadToChat(LoadToChatRequest) returns (LoadToChatResponse);
     rpc LeaveFromChat(LeaveFromChatRequest) returns (LeaveFromChatResponse);
     rpc PermissionToAdmin(PermissionToAdminRequest) returns (PermissionToAdminResponse);
     rpc PermissionToMember(PermissionToMemberRequest) returns (PermissionToMemberResponse);
+    rpc RemoveUserFromChat(RemoveUserFromChatRequest) returns (RemoveUserFromChatResponse);
+    rpc KickUserFromChat(KickUserFromChatRequest) returns (KickUserFromChatResponse);
+}
+
+message KickUserFromChatRequest {
+    int32 user_id = 1;
+    int32 participantId = 2;
+    string chat_id = 3;
+}
+
+message KickUserFromChatResponse {
+    string message = 1;
+    int32 status = 2;
 }
 
 message PermissionToMemberRequest {

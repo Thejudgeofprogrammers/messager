@@ -16,8 +16,13 @@ import { ChatService } from './chat.service';
 import {
     CreateNewChatRequest,
     DeleteChatByIdRequest,
+    KickUserFromChatRequest,
+    KickUserFromChatResponse,
     LeaveFromChatRequest,
     LoadToChatRequest,
+    PermissionToAdminResponse,
+    PermissionToMemberRequest,
+    PermissionToMemberResponse,
 } from 'src/protos/proto_gen_files/chat';
 import {
     ApiBody,
@@ -60,6 +65,136 @@ import {
 @Controller('chat')
 export class ChatController {
     constructor(private readonly chatService: ChatService) {}
+
+    @Post(':chatId/get/admin')
+    @ApiOperation({
+        summary: 'Смена прав на admin',
+        description: '',
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 200,
+        description: 'Ответ на смену прав',
+        type: '',
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'Чат не найден',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для смены на admin',
+        type: '',
+    })
+    async PermissionToAdmin(
+        @Res() res: Response,
+        @Req() req: Request,
+        @Body() participantId: number,
+        @Param(':chatId') chatId: string,
+    ): Promise<Response<PermissionToAdminResponse>> {
+        try {
+            const { userId } = req.cookies;
+            const validateUserId = +userId;
+            const data: PermissionToMemberRequest = {
+                userId: validateUserId,
+                chatId,
+                participantId,
+            };
+            const methodData = await this.chatService.PermissionToAdmin(data);
+            if (!methodData) {
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                    })
+                    .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
+            }
+
+            return res
+                .json({ message: methodData.message })
+                .status(methodData.status);
+        } catch (e) {
+            return res
+                .json({ message: errMessages.loadToChat })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
+        }
+    }
+
+    @Post(':chatId/get/member')
+    @ApiOperation({
+        summary: 'Смена прав на member',
+        description: '',
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 200,
+        description: 'Ответ на смену прав пользователя',
+        type: '',
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'Чат не найден',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для смены прав на member',
+        type: '',
+    })
+    async PermissionToMember(
+        @Res() res: Response,
+        @Req() req: Request,
+        @Body() participantId: number,
+        @Param(':chatId') chatId: string,
+    ): Promise<Response<PermissionToMemberResponse>> {
+        try {
+            const { userId } = req.cookies;
+            const validateUserId = +userId;
+            const data: PermissionToMemberRequest = {
+                userId: validateUserId,
+                chatId,
+                participantId,
+            };
+            const methodData = await this.chatService.PermissionToMember(data);
+            if (!methodData) {
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                    })
+                    .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
+            }
+
+            return res
+                .json({ message: methodData.message })
+                .status(methodData.status);
+        } catch (e) {
+            return res
+                .json({ message: errMessages.loadToChat })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
+        }
+    }
 
     @Post('join')
     @ApiOperation({
@@ -523,59 +658,70 @@ export class ChatController {
     //     }
     // }
 
-    // @Post(':chatId/del/:userId')
-    // @ApiOperation({
-    //     summary: 'Удаление из чата пользователя',
-    //     description: removeUserFromChatDocs,
-    // })
-    // @ApiCookieAuth('userId')
-    // @ApiCookieAuth('jwtToken')
-    // @ApiResponse({
-    //     status: 200,
-    //     description: 'Пользователь удалён из чата',
-    //     type: RemoveUserFromChatResponseDTO,
-    // })
-    // @ApiResponse({
-    //     status: 400,
-    //     description: 'Неправильный запрос',
-    // })
-    // @ApiResponse({
-    //     status: 401,
-    //     description: 'Не авторизован',
-    // })
-    // @ApiResponse({
-    //     status: 404,
-    //     description: 'Пользователь не найден',
-    // })
-    // @ApiResponse({
-    //     status: 500,
-    //     description: 'Ошибка сервера',
-    // })
-    // @ApiBody({
-    //     description: 'Данные для удаления пользователя из чата',
-    //     type: RemoveUserFromChatRequestDTO,
-    // })
-    // async RemoveUserFromChat(
-    //     @Body() payload: RemoveUserFromChatRequestDTO,
-    //     @Res() res: Response,
-    // ): Promise<Response<RemoveUserFromChatResponseDTO>> {
-    //     try {
-    //         const methodData =
-    //             await this.chatService.RemoveUserFromChat(payload);
-    //         if (!methodData) {
-    //             return res
-    //                 .json({
-    //                     message: StatusClient.HTTP_STATUS_NOT_FOUND.message,
-    //                 })
-    //                 .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
-    //         }
-    //         return res
-    //             .json(methodData.response.message)
-    //             .status(methodData.response.status);
-    //     } catch (e) {
-    //         return res
-    //             .json({ message: errMessages.removeUserFromChat })
-    //             .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
-    //     }
-    // }
+    @Post(':chatId/:participantId/kick')
+    @ApiOperation({
+        summary: 'Удаление из чата пользователя',
+        description: '',
+    })
+    @ApiCookieAuth('userId')
+    @ApiCookieAuth('jwtToken')
+    @ApiResponse({
+        status: 200,
+        description: 'Пользователь удалён из чата',
+        type: '',
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Не авторизован',
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'Пользователь не найден',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для удаления пользователя из чата',
+        type: '',
+    })
+    async KickUserFromChat(
+        @Param('userId') participantId: number,
+        @Param('chatId') chatId: string,
+        @Req() req: Request,
+        @Res() res: Response,
+    ): Promise<Response<KickUserFromChatResponse>> {
+        try {
+            const { userId } = req.cookies;
+            const validateUserId = +userId;
+            const data: KickUserFromChatRequest = {
+                userId: validateUserId,
+                participantId,
+                chatId,
+            };
+
+            const methodData = await this.chatService.KickUserFromChat(data);
+
+            if (!methodData) {
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                    })
+                    .status(StatusClient.HTTP_STATUS_NOT_FOUND.status);
+            }
+
+            return res
+                .json({ message: methodData.message })
+                .status(methodData.status);
+        } catch (e) {
+            return res
+                .json({ message: errMessages.removeUserFromChat })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
+        }
+    }
 }
