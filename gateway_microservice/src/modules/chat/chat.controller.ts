@@ -378,10 +378,14 @@ export class ChatController {
     async updateChatById(
         @Param('chatId') chatId: string,
         @Body() payload: Omit<UpdateChatByIdRequestDTO, 'chatId'>,
+        @Req() req: Request,
         @Res() res: Response,
     ): Promise<Response<UpdateChatByIdResponseDTO>> {
         try {
-            const data = { chatId, ...payload };
+            const { userId } = req.cookies;
+            const validateUserId = +userId;
+            const data = { chatId, ...payload, userId: validateUserId };
+            console.log(data);
             const methodData = await this.chatService.UpdateChatById(data);
             if (!methodData) {
                 return res

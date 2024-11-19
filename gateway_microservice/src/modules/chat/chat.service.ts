@@ -300,30 +300,45 @@ export class ChatService implements OnModuleInit {
                     StatusClient.HTTP_STATUS_BAD_REQUEST.message,
                 );
             }
-
+            let chatInfo;
             if (
                 payload.chatType === 'private' ||
                 payload.chatType === 'group'
             ) {
-                const chatInfo = await lastValueFrom(
+                chatInfo = await lastValueFrom(
                     from(
                         this.chatMicroservice.UpdateChatById({
-                            chatId: payload.chatId,
-                            chatName: payload.chatName,
-                            chatType: payload.chatType,
-                            description: payload.description,
+                            chatId: payload.chatId.toString(),
+                            userId: +payload.userId,
+                            chatName: payload.chatName.toString(),
+                            chatType: payload.chatType.toString(),
+                            description: payload.description.toString(),
                         }),
                     ),
                 );
-
-                if (!chatInfo) {
-                    throw new NotFoundException(errMessages.notFound.chat);
-                }
-
-                return chatInfo;
+            } else if (
+                payload.chatType === '' ||
+                payload.chatType === undefined
+            ) {
+                chatInfo = await lastValueFrom(
+                    from(
+                        this.chatMicroservice.UpdateChatById({
+                            chatId: payload.chatId.toString(),
+                            userId: +payload.userId,
+                            chatName: payload.chatName.toString(),
+                            description: payload.description.toString(),
+                        }),
+                    ),
+                );
             } else {
                 throw new BadRequestException('private or group');
             }
+
+            if (!chatInfo) {
+                throw new NotFoundException(errMessages.notFound.chat);
+            }
+
+            return chatInfo;
         } catch (e) {
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({

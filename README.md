@@ -1,11 +1,7 @@
-chmod +x ./config/prisma.env
-chmod +x ./node_modules/ts-proto/protoc-gen-ts_proto
-
-Connection Prometheus server URL *
-http://prometheus:9090
-
-
+chmod +x .
 npx prisma migrate dev --name init - внутри контейнера user_microservice
+
+Connection Prometheus server URL * http://prometheus:9090
 
 https://supabase.com/
 
@@ -13,13 +9,16 @@ metadata call grpc method
 
 #7109AA	#5F2580	#48036F	#9F3ED5	#AD66D5
 
+Задачи:
 
-выход последнего учасника удаляет чат
+update chat выводит сообщение о том что чат обновлен, то есть новое сообщение
 
-выход owner удаляет чат
+метод для admin прав 
+метод понижения прав до member
 
-нельзя добавить в чат несколько раз одним аккаунтом
+avatar chat
+avatar user
 
-update chat только при admin или owner
+method kickuser только при admin или owner
 
-
+метод приглашения пользователя

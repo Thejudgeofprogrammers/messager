@@ -18,3 +18,10 @@ export interface ChatAndParticipats {
     participants: ParticipatsDTO[];
     messages: Types.ObjectId[];
 }
+
+export class UpdateRoleDTO {
+    userId: number;
+    chatId: string;
+    participantId: number;
+    role: string;
+}
