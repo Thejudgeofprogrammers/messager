@@ -5,6 +5,16 @@ package auth;
 service AuthService {
     rpc Register (RegisterRequest) returns (RegisterResponse);
     rpc Login (LoginRequest) returns (LoginResponse);
+    rpc CheckPassword (CheckPasswordRequest) returns (CheckPasswordResponse);
+}
+
+message CheckPasswordRequest {
+  string password = 1;
+  string hashedPassword = 2;
+}
+
+message CheckPasswordResponse {
+  bool exist = 1;
 }
 
 message RegisterRequest {
@@ -35,3 +45,5 @@ message LoginResponse {
   int32 user_id = 1;
   string jwt_token = 2;
 }
+
+

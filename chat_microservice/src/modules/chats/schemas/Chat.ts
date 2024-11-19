@@ -13,6 +13,9 @@ export class Chat {
     @Prop({ type: String, required: true })
     chatType: string;
 
+    @Prop({ type: String })
+    description: string;
+
     @Prop({
         type: {
             message_id: Types.ObjectId,

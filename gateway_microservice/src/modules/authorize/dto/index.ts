@@ -130,3 +130,12 @@ export class LogoutResponseDTO {
     @IsString()
     message: string;
 }
+
+export class RemoveAccountRequestDTO {
+    password: string;
+    userId: number;
+}
+
+export class RemoveAccountResponseDTO {
+    message: string;
+}

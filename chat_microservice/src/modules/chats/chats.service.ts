@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Controller,
     ForbiddenException,
     InternalServerErrorException,
@@ -24,10 +25,17 @@ import {
     GetChatByChatNameResponse,
     GetChatByIdRequest,
     GetChatByIdResponse,
+    PermissionToAdminRequest,
+    PermissionToAdminResponse,
+    PermissionToMemberRequest,
+    PermissionToMemberResponse,
     RemoveUserFromChatRequest,
     RemoveUserFromChatResponse,
+    UpdateChatByIdRequest,
+    UpdateChatByIdResponse,
 } from 'src/protos/proto_gen_files/chat';
 import { Message, MessageDocument } from './schemas/Message';
+import { UpdateRoleDTO } from './dto';
 
 @Controller('ChatService')
 export class ChatService {
@@ -81,6 +89,7 @@ export class ChatService {
                     sender_id: userId,
                     preview: pre,
                 },
+                description: '',
                 participants: [newParticipant._id],
                 messages: [newMessage._id],
             };
@@ -135,7 +144,7 @@ export class ChatService {
                     : undefined,
                 createdAt: data.createdAt,
                 participants: data.participants.map((participant: any) => ({
-                    userId: participant.user_id,
+                    userId: +participant.user_id,
                     role: participant.role,
                 })),
                 messages: data.messages.map((message: any) => ({
@@ -187,8 +196,50 @@ export class ChatService {
     }
 
     @GrpcMethod('ChatService', 'UpdateChatById')
-    async UpdateChatById() {
+    async UpdateChatById(
+        payload: UpdateChatByIdRequest,
+    ): Promise<UpdateChatByIdResponse> {
         try {
+            if (!payload.chatId) {
+                throw new BadRequestException('chatId without');
+            }
+
+            const { chatId, chatName, chatType, description } = payload;
+
+            const chat = await this.chatModel
+                .findById(new Types.ObjectId(chatId))
+                .populate('participants');
+
+            const chatParticipantArray = (chat as any).participants;
+
+            const hasPermission = chatParticipantArray.some(
+                (user: ChatParticipant) =>
+                    user.user_id === payload.userId &&
+                    (user.role === 'owner' || user.role === 'admin'),
+            );
+
+            if (!hasPermission) {
+                throw new ForbiddenException(
+                    'Недостаточно прав для изменения чата',
+                );
+            }
+
+            if (!chat) {
+                throw new NotFoundException(`Чат с ID ${chatId} не найден`);
+            }
+
+            if (chatName) chat.chatName = chatName;
+            if (chatType) chat.chatType = chatType;
+            if (description) chat.description = description;
+
+            await chat.save();
+
+            return {
+                response: {
+                    message: `Чат с ID ${chatId} успешно обновлён`,
+                    status: 200,
+                },
+            };
         } catch (e) {
             this.logger.error(
                 `Ошибка при создании чата: ${e.message}`,
@@ -228,19 +279,13 @@ export class ChatService {
                 );
             }
 
-            const chatDel = await this.chatModel.findByIdAndDelete(validId);
-
+            const chatDel = await this.chatModel.findById(validId);
             if (chatDel) {
-                await this.messageModel.deleteMany({
-                    _id: { $in: chat.messages },
-                });
-                await this.chatParticipantModel.deleteMany({
-                    _id: { $in: chat.participants },
-                });
+                await this.deleteChat(chatDel);
             }
 
             const participantsArray = chatParticipantArray.map(
-                (participant: ChatParticipant) => participant.user_id,
+                (participant: ChatParticipant) => +participant.user_id,
             );
 
             const resp = {
@@ -253,9 +298,6 @@ export class ChatService {
                     data: participantsArray,
                 },
             };
-
-            console.log(`resp`);
-            console.log(resp);
 
             return resp;
         } catch (e) {
@@ -274,21 +316,21 @@ export class ChatService {
         payload: AddUserToChatRequest,
     ): Promise<AddUserToChatResponse> {
         try {
-            const chat = await this.chatModel.findById(
-                new Types.ObjectId(payload.chatId),
-            );
+            const chat = await this.chatModel
+                .findById(new Types.ObjectId(payload.chatId))
+                .populate('participants');
+
             if (!chat) {
-                throw new InternalServerErrorException('Чат не найден');
+                throw new NotFoundException('Чат не найден');
             }
 
-            const userExists = chat.participants.some(
-                (participant) =>
-                    participant.toString() === payload.participant.toString(),
+            const userExistsInChat = chat.participants.some(
+                (participant: any) =>
+                    +participant.user_id === +payload.participant.userId,
             );
-            if (userExists) {
-                throw new InternalServerErrorException(
-                    'Пользователь уже в чате',
-                );
+
+            if (userExistsInChat) {
+                throw new BadRequestException('Пользователь уже в чате');
             }
 
             const newParticipant = new this.chatParticipantModel({
@@ -323,15 +365,18 @@ export class ChatService {
         payload: RemoveUserFromChatRequest,
     ): Promise<RemoveUserFromChatResponse> {
         try {
-            const chat = await this.chatModel.findById(payload.chatId);
+            const chat = await this.chatModel
+                .findById(new Types.ObjectId(payload.chatId))
+                .populate('participants');
+
             if (!chat) {
-                throw new InternalServerErrorException('Чат не найден');
+                throw new NotFoundException('Чат не найден');
             }
 
             const participantIndex = chat.participants.findIndex(
-                (participant) =>
-                    participant.toString() === payload.userId.toString(),
+                (participant: any) => +participant.user_id === +payload.userId,
             );
+
             if (participantIndex === -1) {
                 throw new InternalServerErrorException(
                     'Пользователь не найден в чате',
@@ -339,7 +384,22 @@ export class ChatService {
             }
 
             chat.participants.splice(participantIndex, 1);
+
             await chat.save();
+
+            const participantIndexRole = chat.participants.findIndex(
+                (participant: any) => participant.role === 'owner',
+            );
+
+            if (chat.participants.length === 0 || participantIndexRole === -1) {
+                await this.deleteChat(chat);
+                return {
+                    response: {
+                        message: `Чат ${chat.chatName} удалён, так как больше не осталось участников.`,
+                        status: 200,
+                    },
+                };
+            }
 
             return {
                 response: {
@@ -349,7 +409,151 @@ export class ChatService {
             };
         } catch (e) {
             this.logger.error(
-                `Ошибка при создании чата: ${e.message}`,
+                `Ошибка при удалении пользователя из чата: ${e.message}`,
+                e.stack,
+            );
+            throw new InternalServerErrorException(
+                'Произошла ошибка при удалении пользователя из чата',
+            );
+        }
+    }
+
+    @GrpcMethod('ChatService', 'PermissionToAdmin')
+    async PermissionToAdmin(
+        payload: PermissionToAdminRequest,
+    ): Promise<PermissionToAdminResponse> {
+        try {
+            if (!payload.participantId || !payload.chatId || !payload.userId) {
+                throw new BadRequestException('Не переданы все данные');
+            }
+
+            await this.updateRole({
+                userId: payload.userId,
+                chatId: payload.chatId,
+                participantId: payload.participantId,
+                role: 'admin',
+            });
+
+            return { message: 'Роль успешно изменена', status: 200 };
+        } catch (e) {
+            this.logger.error(
+                `Ошибка при удалении пользователя из чата: ${e.message}`,
+                e.stack,
+            );
+            throw new InternalServerErrorException(
+                'Произошла ошибка при удалении пользователя из чата',
+            );
+        }
+    }
+
+    @GrpcMethod('ChatService', 'PermissionToMember')
+    async PermissionToMember(
+        payload: PermissionToMemberRequest,
+    ): Promise<PermissionToMemberResponse> {
+        try {
+            if (!payload.participantId || !payload.chatId || !payload.userId) {
+                throw new BadRequestException('Не переданы все данные');
+            }
+
+            await this.updateRole({
+                userId: payload.userId,
+                chatId: payload.chatId,
+                participantId: payload.participantId,
+                role: 'member',
+            });
+
+            return { message: 'Роль успешно изменена', status: 200 };
+        } catch (e) {
+            this.logger.error(
+                `Ошибка при удалении пользователя из чата: ${e.message}`,
+                e.stack,
+            );
+            throw new InternalServerErrorException(
+                'Произошла ошибка при удалении пользователя из чата',
+            );
+        }
+    }
+
+    private async updateRole(payload: UpdateRoleDTO): Promise<void> {
+        try {
+            const chat = await this.chatModel
+                .findById(new Types.ObjectId(payload.chatId))
+                .populate<{ participants: ChatParticipant[] }>('participants');
+
+            if (!chat) {
+                throw new NotFoundException('Чат не найден');
+            }
+
+            const user = chat.participants.find(
+                (participant) => +participant.user_id === +payload.userId,
+            );
+
+            if (!user) {
+                throw new NotFoundException('Пользователь не найден в чате');
+            }
+
+            if (user.role !== 'owner') {
+                throw new ForbiddenException('Не хватает прав для операции');
+            }
+
+            const participant = chat.participants.find(
+                (participant) =>
+                    +participant.user_id === +payload.participantId,
+            );
+
+            if (!participant) {
+                throw new NotFoundException('Участник не найден в чате');
+            }
+
+            if (payload.role === 'admin') {
+                if (['owner', 'admin'].includes(participant.role)) {
+                    throw new BadRequestException(
+                        'Участник уже имеет роль выше member',
+                    );
+                }
+                participant.role = 'admin';
+            } else if (payload.role === 'member') {
+                if (
+                    participant.role === 'owner' ||
+                    participant.role === 'member'
+                ) {
+                    throw new BadRequestException(
+                        'Невозможно изменить роль участника на member',
+                    );
+                }
+                participant.role = 'member';
+            } else {
+                throw new BadRequestException('Некорректная роль');
+            }
+
+            await chat.save();
+        } catch (e) {
+            this.logger.error(
+                `Ошибка при удалении пользователя из чата: ${e.message}`,
+                e.stack,
+            );
+            throw new InternalServerErrorException(
+                'Произошла ошибка при удалении пользователя из чата',
+            );
+        }
+    }
+
+    private async deleteChat(chat: ChatDocument): Promise<void> {
+        try {
+            await this.chatModel.findByIdAndDelete(chat._id);
+
+            await this.messageModel.deleteMany({
+                _id: { $in: chat.messages },
+            });
+
+            await this.chatParticipantModel.deleteMany({
+                _id: { $in: chat.participants },
+            });
+
+            this.logger.log(`Чат ${chat.chatName} удалён (ID: ${chat._id})`);
+        } catch (e) {
+            this.logger.error(
+                `Ошибка при удалении пользователя из чата: ${e.message}`,
                 e.stack,
             );
             throw new InternalServerErrorException(

@@ -3,10 +3,11 @@ import { AuthorizeService } from './authorize.service';
 import { AuthorizeController } from './authorize.controller';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { prometheusProvidersAuth } from 'src/config/metrics/metrics.prometheus_auth';
+import { UserService } from '../user/user.service';
 
 @Module({
     imports: [PrometheusModule],
     controllers: [AuthorizeController],
-    providers: [AuthorizeService, ...prometheusProvidersAuth],
+    providers: [UserService, AuthorizeService, ...prometheusProvidersAuth],
 })
 export class AuthorizeModule {}

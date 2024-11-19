@@ -9,6 +9,15 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "auth";
 
+export interface CheckPasswordRequest {
+  password: string;
+  hashedPassword: string;
+}
+
+export interface CheckPasswordResponse {
+  exist: boolean;
+}
+
 export interface RegisterRequest {
   username: string;
   email: string;
@@ -35,6 +44,140 @@ export interface LoginResponse {
   userId: number;
   jwtToken: string;
 }
+
+function createBaseCheckPasswordRequest(): CheckPasswordRequest {
+  return { password: "", hashedPassword: "" };
+}
+
+export const CheckPasswordRequest: MessageFns<CheckPasswordRequest> = {
+  encode(message: CheckPasswordRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.password !== "") {
+      writer.uint32(10).string(message.password);
+    }
+    if (message.hashedPassword !== "") {
+      writer.uint32(18).string(message.hashedPassword);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckPasswordRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckPasswordRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.password = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.hashedPassword = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckPasswordRequest {
+    return {
+      password: isSet(object.password) ? globalThis.String(object.password) : "",
+      hashedPassword: isSet(object.hashedPassword) ? globalThis.String(object.hashedPassword) : "",
+    };
+  },
+
+  toJSON(message: CheckPasswordRequest): unknown {
+    const obj: any = {};
+    if (message.password !== "") {
+      obj.password = message.password;
+    }
+    if (message.hashedPassword !== "") {
+      obj.hashedPassword = message.hashedPassword;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CheckPasswordRequest>, I>>(base?: I): CheckPasswordRequest {
+    return CheckPasswordRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CheckPasswordRequest>, I>>(object: I): CheckPasswordRequest {
+    const message = createBaseCheckPasswordRequest();
+    message.password = object.password ?? "";
+    message.hashedPassword = object.hashedPassword ?? "";
+    return message;
+  },
+};
+
+function createBaseCheckPasswordResponse(): CheckPasswordResponse {
+  return { exist: false };
+}
+
+export const CheckPasswordResponse: MessageFns<CheckPasswordResponse> = {
+  encode(message: CheckPasswordResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.exist !== false) {
+      writer.uint32(8).bool(message.exist);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckPasswordResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckPasswordResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.exist = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckPasswordResponse {
+    return { exist: isSet(object.exist) ? globalThis.Boolean(object.exist) : false };
+  },
+
+  toJSON(message: CheckPasswordResponse): unknown {
+    const obj: any = {};
+    if (message.exist !== false) {
+      obj.exist = message.exist;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CheckPasswordResponse>, I>>(base?: I): CheckPasswordResponse {
+    return CheckPasswordResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CheckPasswordResponse>, I>>(object: I): CheckPasswordResponse {
+    const message = createBaseCheckPasswordResponse();
+    message.exist = object.exist ?? false;
+    return message;
+  },
+};
 
 function createBaseRegisterRequest(): RegisterRequest {
   return { username: "", email: "", password: "", phoneNumber: "" };
@@ -455,6 +598,7 @@ export const LoginResponse: MessageFns<LoginResponse> = {
 export interface AuthService {
   Register(request: RegisterRequest): Promise<RegisterResponse>;
   Login(request: LoginRequest): Promise<LoginResponse>;
+  CheckPassword(request: CheckPasswordRequest): Promise<CheckPasswordResponse>;
 }
 
 export const AuthServiceServiceName = "auth.AuthService";
@@ -466,6 +610,7 @@ export class AuthServiceClientImpl implements AuthService {
     this.rpc = rpc;
     this.Register = this.Register.bind(this);
     this.Login = this.Login.bind(this);
+    this.CheckPassword = this.CheckPassword.bind(this);
   }
   Register(request: RegisterRequest): Promise<RegisterResponse> {
     const data = RegisterRequest.encode(request).finish();
@@ -477,6 +622,12 @@ export class AuthServiceClientImpl implements AuthService {
     const data = LoginRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "Login", data);
     return promise.then((data) => LoginResponse.decode(new BinaryReader(data)));
+  }
+
+  CheckPassword(request: CheckPasswordRequest): Promise<CheckPasswordResponse> {
+    const data = CheckPasswordRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "CheckPassword", data);
+    return promise.then((data) => CheckPasswordResponse.decode(new BinaryReader(data)));
   }
 }
 

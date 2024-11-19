@@ -15,26 +15,46 @@ service ChatService {
     rpc RemoveUserFromChat(RemoveUserFromChatRequest) returns (RemoveUserFromChatResponse);
     rpc LoadToChat(LoadToChatRequest) returns (LoadToChatResponse);
     rpc LeaveFromChat(LeaveFromChatRequest) returns (LeaveFromChatResponse);
+    rpc PermissionToAdmin(PermissionToAdminRequest) returns (PermissionToAdminResponse);
+    rpc PermissionToMember(PermissionToMemberRequest) returns (PermissionToMemberResponse);
 }
 
-// Запрос на создание нового чата
+message PermissionToMemberRequest {
+    int32 user_id = 1;
+    string chat_id = 2;
+    int32 participantId = 3;
+}
+
+message PermissionToMemberResponse {
+    string message = 1;
+    int32 status = 2;
+}
+
+message PermissionToAdminRequest {
+    int32 user_id = 1;
+    string chat_id = 2;
+    int32 participantId = 3;
+}
+
+message PermissionToAdminResponse {
+    string message = 1;
+    int32 status = 2;
+}
+
 message CreateNewChatRequest {
     string chatName = 1;
     string chatType = 2;
     int32 user_id = 3;
 }
 
-// Ответ на создание нового чата
 message CreateNewChatResponse {
-    string chat_id = 1; // ID созданного чата
+    string chat_id = 1;
 }
 
-// Запрос для получения чата по ID
 message GetChatByIdRequest {
     string chat_id = 1;
 }
 
-// Ответ для получения чата по ID
 message GetChatByIdResponse {
     oneof result {
         Chat chat_data = 1;
@@ -42,12 +62,10 @@ message GetChatByIdResponse {
     }
 }
 
-// Запрос для получения чата по имени
 message GetChatByChatNameRequest {
     string chatName = 1;
 }
 
-// Ответ для получения чата по имени
 message GetChatByChatNameResponse {
     repeated ChatIds chat_data = 1;
 }
@@ -57,20 +75,18 @@ message ChatIds {
     string chatName = 2;
 }
 
-// Запрос для обновления чата по ID
 message UpdateChatByIdRequest {
     string chat_id = 1;
-    optional string chatName = 2;
-    optional string chatType = 3;
-    optional string description = 4;
+    int32 user_id = 2;
+    optional string chatName = 3;
+    optional string chatType = 4;
+    optional string description = 5;
 }
 
-// Ответ для обновления чата по ID
 message UpdateChatByIdResponse {
     GenericResponse response = 1;
 }
 
-// Запрос для удаления чата по ID
 message DeleteChatByIdRequest {
     int32 user_id = 1;
     string chat_id = 2;
@@ -85,29 +101,25 @@ message DeleteChatByIdResponse {
   
     message Info {
       string chatId = 1;
-      repeated int32 data = 2; // Массив целых чисел, если это ID пользователей
+      repeated int32 data = 2;
     }
     Info info = 2;
 }
 
-// Запрос для добавления пользователя в чат
 message AddUserToChatRequest {
     string chat_id = 1;
     ChatParticipant participant = 2;
 }
 
-// Ответ для добавления пользователя в чат
 message AddUserToChatResponse {
     GenericResponse response = 1;
 }
 
-// Запрос для удаления пользователя из чата
 message RemoveUserFromChatRequest {
     string chat_id = 1;
     int32 user_id = 2;
 }
 
-// Ответ для удаления пользователя из чата
 message RemoveUserFromChatResponse {
     GenericResponse response = 1;
 }
@@ -130,7 +142,6 @@ message LeaveFromChatResponse {
     GenericResponse response = 1;
 }
 
-// Сообщение для представления информации о чате
 message Chat {
     string chat_id = 1;
     string chatName = 2;
@@ -141,20 +152,17 @@ message Chat {
     google.protobuf.Timestamp createdAt = 7;
 }
 
-// Сообщение для представления последнего сообщения
 message LastMessage {
     string message_id = 1;
     int32 sender_id = 2;
     string preview = 3;
 }
 
-// Сообщение для представления участника чата
 message ChatParticipant {
     int32 user_id = 1;
     string role = 2; // 'owner', 'admin', 'member'
 }
 
-// Сообщение для представления сообщения
 message Message {
     string message_id = 1;
     int32 sender_id = 2;
@@ -162,13 +170,11 @@ message Message {
     google.protobuf.Timestamp timestamp = 4;
 }
 
-// Структура для обработки ошибок
 message ErrorResponse {
     string message = 1;
     int32 status = 2;
 }
 
-// Общее сообщение для успешного ответа
 message GenericResponse {
     string message = 1;
     int32 status = 2;

@@ -17,6 +17,24 @@ service UserService {
     rpc AddChatToUser (AddChatToUserRequest) returns (AddChatToUserResponse);
     rpc RemoveChatFromUser (RemoveChatFromUserRequest) returns (RemoveChatFromUserResponse);
     rpc RemoveArrayChat (RemoveArrayChatRequest) returns (RemoveArrayChatResponse);
+    rpc RemoveAccount (RemoveAccountRequest) returns (RemoveAccountResponse);
+    rpc GetPasswordUser (GetPasswordUserRequest) returns (GetPasswordUserResponse);
+}
+
+message GetPasswordUserRequest {
+    int32 user_id = 1;
+}
+
+message GetPasswordUserResponse {
+    string hashed_password = 1;
+}
+
+message RemoveAccountRequest {
+    int32 user_id = 1;
+}
+
+message RemoveAccountResponse {
+    string message = 1;
 }
 
 message RemoveArrayChatRequest {

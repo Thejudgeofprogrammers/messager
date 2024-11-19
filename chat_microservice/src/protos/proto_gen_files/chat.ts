@@ -10,36 +10,51 @@ import { Timestamp } from "./google/protobuf/timestamp";
 
 export const protobufPackage = "chat";
 
-/** Запрос на создание нового чата */
+export interface PermissionToMemberRequest {
+  userId: number;
+  chatId: string;
+  participantId: number;
+}
+
+export interface PermissionToMemberResponse {
+  message: string;
+  status: number;
+}
+
+export interface PermissionToAdminRequest {
+  userId: number;
+  chatId: string;
+  participantId: number;
+}
+
+export interface PermissionToAdminResponse {
+  message: string;
+  status: number;
+}
+
 export interface CreateNewChatRequest {
   chatName: string;
   chatType: string;
   userId: number;
 }
 
-/** Ответ на создание нового чата */
 export interface CreateNewChatResponse {
-  /** ID созданного чата */
   chatId: string;
 }
 
-/** Запрос для получения чата по ID */
 export interface GetChatByIdRequest {
   chatId: string;
 }
 
-/** Ответ для получения чата по ID */
 export interface GetChatByIdResponse {
   chatData?: Chat | undefined;
   notFound?: ErrorResponse | undefined;
 }
 
-/** Запрос для получения чата по имени */
 export interface GetChatByChatNameRequest {
   chatName: string;
 }
 
-/** Ответ для получения чата по имени */
 export interface GetChatByChatNameResponse {
   chatData: ChatIds[];
 }
@@ -49,20 +64,18 @@ export interface ChatIds {
   chatName: string;
 }
 
-/** Запрос для обновления чата по ID */
 export interface UpdateChatByIdRequest {
   chatId: string;
+  userId: number;
   chatName?: string | undefined;
   chatType?: string | undefined;
   description?: string | undefined;
 }
 
-/** Ответ для обновления чата по ID */
 export interface UpdateChatByIdResponse {
   response: GenericResponse | undefined;
 }
 
-/** Запрос для удаления чата по ID */
 export interface DeleteChatByIdRequest {
   userId: number;
   chatId: string;
@@ -80,28 +93,23 @@ export interface DeleteChatByIdResponse_Response {
 
 export interface DeleteChatByIdResponse_Info {
   chatId: string;
-  /** Массив целых чисел, если это ID пользователей */
   data: number[];
 }
 
-/** Запрос для добавления пользователя в чат */
 export interface AddUserToChatRequest {
   chatId: string;
   participant: ChatParticipant | undefined;
 }
 
-/** Ответ для добавления пользователя в чат */
 export interface AddUserToChatResponse {
   response: GenericResponse | undefined;
 }
 
-/** Запрос для удаления пользователя из чата */
 export interface RemoveUserFromChatRequest {
   chatId: string;
   userId: number;
 }
 
-/** Ответ для удаления пользователя из чата */
 export interface RemoveUserFromChatResponse {
   response: GenericResponse | undefined;
 }
@@ -124,7 +132,6 @@ export interface LeaveFromChatResponse {
   response: GenericResponse | undefined;
 }
 
-/** Сообщение для представления информации о чате */
 export interface Chat {
   chatId: string;
   chatName: string;
@@ -135,21 +142,18 @@ export interface Chat {
   createdAt: Date | undefined;
 }
 
-/** Сообщение для представления последнего сообщения */
 export interface LastMessage {
   messageId: string;
   senderId: number;
   preview: string;
 }
 
-/** Сообщение для представления участника чата */
 export interface ChatParticipant {
   userId: number;
   /** 'owner', 'admin', 'member' */
   role: string;
 }
 
-/** Сообщение для представления сообщения */
 export interface Message {
   messageId: string;
   senderId: number;
@@ -157,17 +161,351 @@ export interface Message {
   timestamp: Date | undefined;
 }
 
-/** Структура для обработки ошибок */
 export interface ErrorResponse {
   message: string;
   status: number;
 }
 
-/** Общее сообщение для успешного ответа */
 export interface GenericResponse {
   message: string;
   status: number;
 }
+
+function createBasePermissionToMemberRequest(): PermissionToMemberRequest {
+  return { userId: 0, chatId: "", participantId: 0 };
+}
+
+export const PermissionToMemberRequest: MessageFns<PermissionToMemberRequest> = {
+  encode(message: PermissionToMemberRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.chatId !== "") {
+      writer.uint32(18).string(message.chatId);
+    }
+    if (message.participantId !== 0) {
+      writer.uint32(24).int32(message.participantId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PermissionToMemberRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePermissionToMemberRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.chatId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.participantId = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PermissionToMemberRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      chatId: isSet(object.chatId) ? globalThis.String(object.chatId) : "",
+      participantId: isSet(object.participantId) ? globalThis.Number(object.participantId) : 0,
+    };
+  },
+
+  toJSON(message: PermissionToMemberRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.chatId !== "") {
+      obj.chatId = message.chatId;
+    }
+    if (message.participantId !== 0) {
+      obj.participantId = Math.round(message.participantId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PermissionToMemberRequest>, I>>(base?: I): PermissionToMemberRequest {
+    return PermissionToMemberRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PermissionToMemberRequest>, I>>(object: I): PermissionToMemberRequest {
+    const message = createBasePermissionToMemberRequest();
+    message.userId = object.userId ?? 0;
+    message.chatId = object.chatId ?? "";
+    message.participantId = object.participantId ?? 0;
+    return message;
+  },
+};
+
+function createBasePermissionToMemberResponse(): PermissionToMemberResponse {
+  return { message: "", status: 0 };
+}
+
+export const PermissionToMemberResponse: MessageFns<PermissionToMemberResponse> = {
+  encode(message: PermissionToMemberResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PermissionToMemberResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePermissionToMemberResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PermissionToMemberResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
+  },
+
+  toJSON(message: PermissionToMemberResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PermissionToMemberResponse>, I>>(base?: I): PermissionToMemberResponse {
+    return PermissionToMemberResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PermissionToMemberResponse>, I>>(object: I): PermissionToMemberResponse {
+    const message = createBasePermissionToMemberResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
+
+function createBasePermissionToAdminRequest(): PermissionToAdminRequest {
+  return { userId: 0, chatId: "", participantId: 0 };
+}
+
+export const PermissionToAdminRequest: MessageFns<PermissionToAdminRequest> = {
+  encode(message: PermissionToAdminRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.chatId !== "") {
+      writer.uint32(18).string(message.chatId);
+    }
+    if (message.participantId !== 0) {
+      writer.uint32(24).int32(message.participantId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PermissionToAdminRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePermissionToAdminRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.chatId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.participantId = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PermissionToAdminRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      chatId: isSet(object.chatId) ? globalThis.String(object.chatId) : "",
+      participantId: isSet(object.participantId) ? globalThis.Number(object.participantId) : 0,
+    };
+  },
+
+  toJSON(message: PermissionToAdminRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.chatId !== "") {
+      obj.chatId = message.chatId;
+    }
+    if (message.participantId !== 0) {
+      obj.participantId = Math.round(message.participantId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PermissionToAdminRequest>, I>>(base?: I): PermissionToAdminRequest {
+    return PermissionToAdminRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PermissionToAdminRequest>, I>>(object: I): PermissionToAdminRequest {
+    const message = createBasePermissionToAdminRequest();
+    message.userId = object.userId ?? 0;
+    message.chatId = object.chatId ?? "";
+    message.participantId = object.participantId ?? 0;
+    return message;
+  },
+};
+
+function createBasePermissionToAdminResponse(): PermissionToAdminResponse {
+  return { message: "", status: 0 };
+}
+
+export const PermissionToAdminResponse: MessageFns<PermissionToAdminResponse> = {
+  encode(message: PermissionToAdminResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PermissionToAdminResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePermissionToAdminResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PermissionToAdminResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
+  },
+
+  toJSON(message: PermissionToAdminResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PermissionToAdminResponse>, I>>(base?: I): PermissionToAdminResponse {
+    return PermissionToAdminResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PermissionToAdminResponse>, I>>(object: I): PermissionToAdminResponse {
+    const message = createBasePermissionToAdminResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
 
 function createBaseCreateNewChatRequest(): CreateNewChatRequest {
   return { chatName: "", chatType: "", userId: 0 };
@@ -652,7 +990,7 @@ export const ChatIds: MessageFns<ChatIds> = {
 };
 
 function createBaseUpdateChatByIdRequest(): UpdateChatByIdRequest {
-  return { chatId: "", chatName: undefined, chatType: undefined, description: undefined };
+  return { chatId: "", userId: 0, chatName: undefined, chatType: undefined, description: undefined };
 }
 
 export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
@@ -660,14 +998,17 @@ export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
     if (message.chatId !== "") {
       writer.uint32(10).string(message.chatId);
     }
+    if (message.userId !== 0) {
+      writer.uint32(16).int32(message.userId);
+    }
     if (message.chatName !== undefined) {
-      writer.uint32(18).string(message.chatName);
+      writer.uint32(26).string(message.chatName);
     }
     if (message.chatType !== undefined) {
-      writer.uint32(26).string(message.chatType);
+      writer.uint32(34).string(message.chatType);
     }
     if (message.description !== undefined) {
-      writer.uint32(34).string(message.description);
+      writer.uint32(42).string(message.description);
     }
     return writer;
   },
@@ -688,11 +1029,11 @@ export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
           continue;
         }
         case 2: {
-          if (tag !== 18) {
+          if (tag !== 16) {
             break;
           }
 
-          message.chatName = reader.string();
+          message.userId = reader.int32();
           continue;
         }
         case 3: {
@@ -700,11 +1041,19 @@ export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
             break;
           }
 
-          message.chatType = reader.string();
+          message.chatName = reader.string();
           continue;
         }
         case 4: {
           if (tag !== 34) {
+            break;
+          }
+
+          message.chatType = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
             break;
           }
 
@@ -723,6 +1072,7 @@ export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
   fromJSON(object: any): UpdateChatByIdRequest {
     return {
       chatId: isSet(object.chatId) ? globalThis.String(object.chatId) : "",
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
       chatName: isSet(object.chatName) ? globalThis.String(object.chatName) : undefined,
       chatType: isSet(object.chatType) ? globalThis.String(object.chatType) : undefined,
       description: isSet(object.description) ? globalThis.String(object.description) : undefined,
@@ -733,6 +1083,9 @@ export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
     const obj: any = {};
     if (message.chatId !== "") {
       obj.chatId = message.chatId;
+    }
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
     }
     if (message.chatName !== undefined) {
       obj.chatName = message.chatName;
@@ -752,6 +1105,7 @@ export const UpdateChatByIdRequest: MessageFns<UpdateChatByIdRequest> = {
   fromPartial<I extends Exact<DeepPartial<UpdateChatByIdRequest>, I>>(object: I): UpdateChatByIdRequest {
     const message = createBaseUpdateChatByIdRequest();
     message.chatId = object.chatId ?? "";
+    message.userId = object.userId ?? 0;
     message.chatName = object.chatName ?? undefined;
     message.chatType = object.chatType ?? undefined;
     message.description = object.description ?? undefined;
@@ -2294,6 +2648,8 @@ export interface ChatService {
   RemoveUserFromChat(request: RemoveUserFromChatRequest): Promise<RemoveUserFromChatResponse>;
   LoadToChat(request: LoadToChatRequest): Promise<LoadToChatResponse>;
   LeaveFromChat(request: LeaveFromChatRequest): Promise<LeaveFromChatResponse>;
+  PermissionToAdmin(request: PermissionToAdminRequest): Promise<PermissionToAdminResponse>;
+  PermissionToMember(request: PermissionToMemberRequest): Promise<PermissionToMemberResponse>;
 }
 
 export const ChatServiceServiceName = "chat.ChatService";
@@ -2312,6 +2668,8 @@ export class ChatServiceClientImpl implements ChatService {
     this.RemoveUserFromChat = this.RemoveUserFromChat.bind(this);
     this.LoadToChat = this.LoadToChat.bind(this);
     this.LeaveFromChat = this.LeaveFromChat.bind(this);
+    this.PermissionToAdmin = this.PermissionToAdmin.bind(this);
+    this.PermissionToMember = this.PermissionToMember.bind(this);
   }
   CreateNewChat(request: CreateNewChatRequest): Promise<CreateNewChatResponse> {
     const data = CreateNewChatRequest.encode(request).finish();
@@ -2365,6 +2723,18 @@ export class ChatServiceClientImpl implements ChatService {
     const data = LeaveFromChatRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "LeaveFromChat", data);
     return promise.then((data) => LeaveFromChatResponse.decode(new BinaryReader(data)));
+  }
+
+  PermissionToAdmin(request: PermissionToAdminRequest): Promise<PermissionToAdminResponse> {
+    const data = PermissionToAdminRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "PermissionToAdmin", data);
+    return promise.then((data) => PermissionToAdminResponse.decode(new BinaryReader(data)));
+  }
+
+  PermissionToMember(request: PermissionToMemberRequest): Promise<PermissionToMemberResponse> {
+    const data = PermissionToMemberRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "PermissionToMember", data);
+    return promise.then((data) => PermissionToMemberResponse.decode(new BinaryReader(data)));
   }
 }
 

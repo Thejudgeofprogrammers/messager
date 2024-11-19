@@ -1,5 +1,4 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
-import { Response } from 'express';
+import { Body, Controller, Delete, Post, Req, Res } from '@nestjs/common';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
 import {
@@ -15,6 +14,8 @@ import {
     LogoutResponseDTO,
     RegisterFormDTO,
     RegisterResponseDTO,
+    RemoveAccountRequestDTO,
+    RemoveAccountResponseDTO,
 } from './dto';
 import { StatusClient } from 'src/common/status';
 import { errMessages } from 'src/common/messages';
@@ -26,6 +27,8 @@ import {
     ApiTags,
 } from '@nestjs/swagger';
 import { loginDocs, logoutDocs, RegisterDocs } from 'src/common/api/auth';
+
+import { Response, Request } from 'express';
 
 @ApiTags('Авторизация/Аутентификация')
 @Controller('auth')
@@ -143,6 +146,51 @@ export class AuthorizeController {
                 .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
         } finally {
             end();
+        }
+    }
+
+    @Delete('delete')
+    @ApiOperation({
+        summary: 'Удаление аккаунта',
+        description: 'Удаление аккаунта',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Пользователь вышел с аккаунта',
+        type: RemoveAccountResponseDTO,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Неправильный запрос',
+    })
+    @ApiResponse({
+        status: 500,
+        description: 'Ошибка сервера',
+    })
+    @ApiBody({
+        description: 'Данные для выхода',
+        type: RemoveAccountRequestDTO,
+    })
+    async DeleteUser(
+        @Body() password: string,
+        @Res() res: Response,
+        @Req() req: Request,
+    ): Promise<Response<RemoveAccountResponseDTO>> {
+        try {
+            const userId: number = +req.cookies['userId'];
+            const payload = { userId, password };
+            const data = await this.authorizeService.DeleteUser(payload);
+            if (!data) {
+                return res.json({ message: 'Ошибка' });
+            }
+            return res.json({ message: data.message });
+        } catch (e) {
+            return res
+                .json({
+                    message: errMessages.delUser,
+                    error: e.message,
+                })
+                .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
         }
     }
 
