@@ -9,6 +9,90 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "user";
 
+export interface ToggleUserProfileCheckRequset {
+  toggle: boolean;
+}
+
+export interface ToggleUserProfileCheckResponse {
+  success: boolean;
+}
+
+export interface GetUserProfileRequest {
+  userId: number;
+  whoFind: number;
+}
+
+export interface UpdateUserProfileRequest {
+  userId: number;
+  description: string;
+}
+
+export interface UpdateUserPasswordRequest {
+  userId: number;
+  password: string;
+}
+
+export interface UploadAvatarUserRequest {
+  userId: number;
+  avatarUrl: string;
+}
+
+export interface FindUserAvatarRequest {
+  userId: number;
+  avatarId: number;
+}
+
+export interface FindUserAvatarArrayRequest {
+  userId: number;
+}
+
+export interface DeleteAvatarUserRequest {
+  userId: number;
+  avatarId: number;
+}
+
+export interface GetUserProfileResponse {
+  message: string;
+  status: number;
+}
+
+export interface UpdateUserProfileResponse {
+  message: string;
+  status: number;
+}
+
+export interface UpdateUserPasswordResponse {
+  message: string;
+  status: number;
+}
+
+export interface DeleteAvatarUserResponse {
+  message: string;
+  status: number;
+}
+
+export interface AvatarData {
+  avatarId: number;
+  avatarUrl: string;
+}
+
+export interface FindUserAvatarResponse {
+  message: string;
+  status: number;
+  data: AvatarData | undefined;
+}
+
+export interface FindUserAvatarArrayResponse {
+  message: string;
+  status: number;
+  data: AvatarData[];
+}
+
+export interface UploadAvatarUserResponse {
+  message: string;
+  status: number;
+}
+
 export interface GetPasswordUserRequest {
   userId: number;
 }
@@ -134,6 +218,1282 @@ export interface UserArray {
   userId: number;
   username: string;
 }
+
+function createBaseToggleUserProfileCheckRequset(): ToggleUserProfileCheckRequset {
+  return { toggle: false };
+}
+
+export const ToggleUserProfileCheckRequset: MessageFns<ToggleUserProfileCheckRequset> = {
+  encode(message: ToggleUserProfileCheckRequset, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.toggle !== false) {
+      writer.uint32(8).bool(message.toggle);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ToggleUserProfileCheckRequset {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseToggleUserProfileCheckRequset();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.toggle = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ToggleUserProfileCheckRequset {
+    return { toggle: isSet(object.toggle) ? globalThis.Boolean(object.toggle) : false };
+  },
+
+  toJSON(message: ToggleUserProfileCheckRequset): unknown {
+    const obj: any = {};
+    if (message.toggle !== false) {
+      obj.toggle = message.toggle;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ToggleUserProfileCheckRequset>, I>>(base?: I): ToggleUserProfileCheckRequset {
+    return ToggleUserProfileCheckRequset.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ToggleUserProfileCheckRequset>, I>>(
+    object: I,
+  ): ToggleUserProfileCheckRequset {
+    const message = createBaseToggleUserProfileCheckRequset();
+    message.toggle = object.toggle ?? false;
+    return message;
+  },
+};
+
+function createBaseToggleUserProfileCheckResponse(): ToggleUserProfileCheckResponse {
+  return { success: false };
+}
+
+export const ToggleUserProfileCheckResponse: MessageFns<ToggleUserProfileCheckResponse> = {
+  encode(message: ToggleUserProfileCheckResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.success !== false) {
+      writer.uint32(8).bool(message.success);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ToggleUserProfileCheckResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseToggleUserProfileCheckResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.success = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ToggleUserProfileCheckResponse {
+    return { success: isSet(object.success) ? globalThis.Boolean(object.success) : false };
+  },
+
+  toJSON(message: ToggleUserProfileCheckResponse): unknown {
+    const obj: any = {};
+    if (message.success !== false) {
+      obj.success = message.success;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ToggleUserProfileCheckResponse>, I>>(base?: I): ToggleUserProfileCheckResponse {
+    return ToggleUserProfileCheckResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ToggleUserProfileCheckResponse>, I>>(
+    object: I,
+  ): ToggleUserProfileCheckResponse {
+    const message = createBaseToggleUserProfileCheckResponse();
+    message.success = object.success ?? false;
+    return message;
+  },
+};
+
+function createBaseGetUserProfileRequest(): GetUserProfileRequest {
+  return { userId: 0, whoFind: 0 };
+}
+
+export const GetUserProfileRequest: MessageFns<GetUserProfileRequest> = {
+  encode(message: GetUserProfileRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.whoFind !== 0) {
+      writer.uint32(16).int32(message.whoFind);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetUserProfileRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetUserProfileRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.whoFind = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetUserProfileRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      whoFind: isSet(object.whoFind) ? globalThis.Number(object.whoFind) : 0,
+    };
+  },
+
+  toJSON(message: GetUserProfileRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.whoFind !== 0) {
+      obj.whoFind = Math.round(message.whoFind);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetUserProfileRequest>, I>>(base?: I): GetUserProfileRequest {
+    return GetUserProfileRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetUserProfileRequest>, I>>(object: I): GetUserProfileRequest {
+    const message = createBaseGetUserProfileRequest();
+    message.userId = object.userId ?? 0;
+    message.whoFind = object.whoFind ?? 0;
+    return message;
+  },
+};
+
+function createBaseUpdateUserProfileRequest(): UpdateUserProfileRequest {
+  return { userId: 0, description: "" };
+}
+
+export const UpdateUserProfileRequest: MessageFns<UpdateUserProfileRequest> = {
+  encode(message: UpdateUserProfileRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.description !== "") {
+      writer.uint32(18).string(message.description);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateUserProfileRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateUserProfileRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.description = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateUserProfileRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      description: isSet(object.description) ? globalThis.String(object.description) : "",
+    };
+  },
+
+  toJSON(message: UpdateUserProfileRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.description !== "") {
+      obj.description = message.description;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UpdateUserProfileRequest>, I>>(base?: I): UpdateUserProfileRequest {
+    return UpdateUserProfileRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UpdateUserProfileRequest>, I>>(object: I): UpdateUserProfileRequest {
+    const message = createBaseUpdateUserProfileRequest();
+    message.userId = object.userId ?? 0;
+    message.description = object.description ?? "";
+    return message;
+  },
+};
+
+function createBaseUpdateUserPasswordRequest(): UpdateUserPasswordRequest {
+  return { userId: 0, password: "" };
+}
+
+export const UpdateUserPasswordRequest: MessageFns<UpdateUserPasswordRequest> = {
+  encode(message: UpdateUserPasswordRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.password !== "") {
+      writer.uint32(18).string(message.password);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateUserPasswordRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateUserPasswordRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.password = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateUserPasswordRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      password: isSet(object.password) ? globalThis.String(object.password) : "",
+    };
+  },
+
+  toJSON(message: UpdateUserPasswordRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.password !== "") {
+      obj.password = message.password;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UpdateUserPasswordRequest>, I>>(base?: I): UpdateUserPasswordRequest {
+    return UpdateUserPasswordRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UpdateUserPasswordRequest>, I>>(object: I): UpdateUserPasswordRequest {
+    const message = createBaseUpdateUserPasswordRequest();
+    message.userId = object.userId ?? 0;
+    message.password = object.password ?? "";
+    return message;
+  },
+};
+
+function createBaseUploadAvatarUserRequest(): UploadAvatarUserRequest {
+  return { userId: 0, avatarUrl: "" };
+}
+
+export const UploadAvatarUserRequest: MessageFns<UploadAvatarUserRequest> = {
+  encode(message: UploadAvatarUserRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.avatarUrl !== "") {
+      writer.uint32(18).string(message.avatarUrl);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UploadAvatarUserRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUploadAvatarUserRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.avatarUrl = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UploadAvatarUserRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      avatarUrl: isSet(object.avatarUrl) ? globalThis.String(object.avatarUrl) : "",
+    };
+  },
+
+  toJSON(message: UploadAvatarUserRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.avatarUrl !== "") {
+      obj.avatarUrl = message.avatarUrl;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UploadAvatarUserRequest>, I>>(base?: I): UploadAvatarUserRequest {
+    return UploadAvatarUserRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UploadAvatarUserRequest>, I>>(object: I): UploadAvatarUserRequest {
+    const message = createBaseUploadAvatarUserRequest();
+    message.userId = object.userId ?? 0;
+    message.avatarUrl = object.avatarUrl ?? "";
+    return message;
+  },
+};
+
+function createBaseFindUserAvatarRequest(): FindUserAvatarRequest {
+  return { userId: 0, avatarId: 0 };
+}
+
+export const FindUserAvatarRequest: MessageFns<FindUserAvatarRequest> = {
+  encode(message: FindUserAvatarRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.avatarId !== 0) {
+      writer.uint32(16).int32(message.avatarId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FindUserAvatarRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFindUserAvatarRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.avatarId = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FindUserAvatarRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      avatarId: isSet(object.avatarId) ? globalThis.Number(object.avatarId) : 0,
+    };
+  },
+
+  toJSON(message: FindUserAvatarRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.avatarId !== 0) {
+      obj.avatarId = Math.round(message.avatarId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FindUserAvatarRequest>, I>>(base?: I): FindUserAvatarRequest {
+    return FindUserAvatarRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FindUserAvatarRequest>, I>>(object: I): FindUserAvatarRequest {
+    const message = createBaseFindUserAvatarRequest();
+    message.userId = object.userId ?? 0;
+    message.avatarId = object.avatarId ?? 0;
+    return message;
+  },
+};
+
+function createBaseFindUserAvatarArrayRequest(): FindUserAvatarArrayRequest {
+  return { userId: 0 };
+}
+
+export const FindUserAvatarArrayRequest: MessageFns<FindUserAvatarArrayRequest> = {
+  encode(message: FindUserAvatarArrayRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FindUserAvatarArrayRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFindUserAvatarArrayRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FindUserAvatarArrayRequest {
+    return { userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0 };
+  },
+
+  toJSON(message: FindUserAvatarArrayRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FindUserAvatarArrayRequest>, I>>(base?: I): FindUserAvatarArrayRequest {
+    return FindUserAvatarArrayRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FindUserAvatarArrayRequest>, I>>(object: I): FindUserAvatarArrayRequest {
+    const message = createBaseFindUserAvatarArrayRequest();
+    message.userId = object.userId ?? 0;
+    return message;
+  },
+};
+
+function createBaseDeleteAvatarUserRequest(): DeleteAvatarUserRequest {
+  return { userId: 0, avatarId: 0 };
+}
+
+export const DeleteAvatarUserRequest: MessageFns<DeleteAvatarUserRequest> = {
+  encode(message: DeleteAvatarUserRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.avatarId !== 0) {
+      writer.uint32(16).int32(message.avatarId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteAvatarUserRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteAvatarUserRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.avatarId = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeleteAvatarUserRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      avatarId: isSet(object.avatarId) ? globalThis.Number(object.avatarId) : 0,
+    };
+  },
+
+  toJSON(message: DeleteAvatarUserRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.avatarId !== 0) {
+      obj.avatarId = Math.round(message.avatarId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DeleteAvatarUserRequest>, I>>(base?: I): DeleteAvatarUserRequest {
+    return DeleteAvatarUserRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<DeleteAvatarUserRequest>, I>>(object: I): DeleteAvatarUserRequest {
+    const message = createBaseDeleteAvatarUserRequest();
+    message.userId = object.userId ?? 0;
+    message.avatarId = object.avatarId ?? 0;
+    return message;
+  },
+};
+
+function createBaseGetUserProfileResponse(): GetUserProfileResponse {
+  return { message: "", status: 0 };
+}
+
+export const GetUserProfileResponse: MessageFns<GetUserProfileResponse> = {
+  encode(message: GetUserProfileResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetUserProfileResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetUserProfileResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetUserProfileResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
+  },
+
+  toJSON(message: GetUserProfileResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetUserProfileResponse>, I>>(base?: I): GetUserProfileResponse {
+    return GetUserProfileResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetUserProfileResponse>, I>>(object: I): GetUserProfileResponse {
+    const message = createBaseGetUserProfileResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
+
+function createBaseUpdateUserProfileResponse(): UpdateUserProfileResponse {
+  return { message: "", status: 0 };
+}
+
+export const UpdateUserProfileResponse: MessageFns<UpdateUserProfileResponse> = {
+  encode(message: UpdateUserProfileResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateUserProfileResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateUserProfileResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateUserProfileResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
+  },
+
+  toJSON(message: UpdateUserProfileResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UpdateUserProfileResponse>, I>>(base?: I): UpdateUserProfileResponse {
+    return UpdateUserProfileResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UpdateUserProfileResponse>, I>>(object: I): UpdateUserProfileResponse {
+    const message = createBaseUpdateUserProfileResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
+
+function createBaseUpdateUserPasswordResponse(): UpdateUserPasswordResponse {
+  return { message: "", status: 0 };
+}
+
+export const UpdateUserPasswordResponse: MessageFns<UpdateUserPasswordResponse> = {
+  encode(message: UpdateUserPasswordResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateUserPasswordResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateUserPasswordResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateUserPasswordResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
+  },
+
+  toJSON(message: UpdateUserPasswordResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UpdateUserPasswordResponse>, I>>(base?: I): UpdateUserPasswordResponse {
+    return UpdateUserPasswordResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UpdateUserPasswordResponse>, I>>(object: I): UpdateUserPasswordResponse {
+    const message = createBaseUpdateUserPasswordResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
+
+function createBaseDeleteAvatarUserResponse(): DeleteAvatarUserResponse {
+  return { message: "", status: 0 };
+}
+
+export const DeleteAvatarUserResponse: MessageFns<DeleteAvatarUserResponse> = {
+  encode(message: DeleteAvatarUserResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteAvatarUserResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteAvatarUserResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeleteAvatarUserResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
+  },
+
+  toJSON(message: DeleteAvatarUserResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DeleteAvatarUserResponse>, I>>(base?: I): DeleteAvatarUserResponse {
+    return DeleteAvatarUserResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<DeleteAvatarUserResponse>, I>>(object: I): DeleteAvatarUserResponse {
+    const message = createBaseDeleteAvatarUserResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
+
+function createBaseAvatarData(): AvatarData {
+  return { avatarId: 0, avatarUrl: "" };
+}
+
+export const AvatarData: MessageFns<AvatarData> = {
+  encode(message: AvatarData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.avatarId !== 0) {
+      writer.uint32(8).int32(message.avatarId);
+    }
+    if (message.avatarUrl !== "") {
+      writer.uint32(18).string(message.avatarUrl);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AvatarData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAvatarData();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.avatarId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.avatarUrl = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AvatarData {
+    return {
+      avatarId: isSet(object.avatarId) ? globalThis.Number(object.avatarId) : 0,
+      avatarUrl: isSet(object.avatarUrl) ? globalThis.String(object.avatarUrl) : "",
+    };
+  },
+
+  toJSON(message: AvatarData): unknown {
+    const obj: any = {};
+    if (message.avatarId !== 0) {
+      obj.avatarId = Math.round(message.avatarId);
+    }
+    if (message.avatarUrl !== "") {
+      obj.avatarUrl = message.avatarUrl;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AvatarData>, I>>(base?: I): AvatarData {
+    return AvatarData.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AvatarData>, I>>(object: I): AvatarData {
+    const message = createBaseAvatarData();
+    message.avatarId = object.avatarId ?? 0;
+    message.avatarUrl = object.avatarUrl ?? "";
+    return message;
+  },
+};
+
+function createBaseFindUserAvatarResponse(): FindUserAvatarResponse {
+  return { message: "", status: 0, data: undefined };
+}
+
+export const FindUserAvatarResponse: MessageFns<FindUserAvatarResponse> = {
+  encode(message: FindUserAvatarResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    if (message.data !== undefined) {
+      AvatarData.encode(message.data, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FindUserAvatarResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFindUserAvatarResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.data = AvatarData.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FindUserAvatarResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+      data: isSet(object.data) ? AvatarData.fromJSON(object.data) : undefined,
+    };
+  },
+
+  toJSON(message: FindUserAvatarResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    if (message.data !== undefined) {
+      obj.data = AvatarData.toJSON(message.data);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FindUserAvatarResponse>, I>>(base?: I): FindUserAvatarResponse {
+    return FindUserAvatarResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FindUserAvatarResponse>, I>>(object: I): FindUserAvatarResponse {
+    const message = createBaseFindUserAvatarResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    message.data = (object.data !== undefined && object.data !== null)
+      ? AvatarData.fromPartial(object.data)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseFindUserAvatarArrayResponse(): FindUserAvatarArrayResponse {
+  return { message: "", status: 0, data: [] };
+}
+
+export const FindUserAvatarArrayResponse: MessageFns<FindUserAvatarArrayResponse> = {
+  encode(message: FindUserAvatarArrayResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    for (const v of message.data) {
+      AvatarData.encode(v!, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FindUserAvatarArrayResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFindUserAvatarArrayResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.data.push(AvatarData.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FindUserAvatarArrayResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+      data: globalThis.Array.isArray(object?.data) ? object.data.map((e: any) => AvatarData.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: FindUserAvatarArrayResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    if (message.data?.length) {
+      obj.data = message.data.map((e) => AvatarData.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FindUserAvatarArrayResponse>, I>>(base?: I): FindUserAvatarArrayResponse {
+    return FindUserAvatarArrayResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FindUserAvatarArrayResponse>, I>>(object: I): FindUserAvatarArrayResponse {
+    const message = createBaseFindUserAvatarArrayResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    message.data = object.data?.map((e) => AvatarData.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseUploadAvatarUserResponse(): UploadAvatarUserResponse {
+  return { message: "", status: 0 };
+}
+
+export const UploadAvatarUserResponse: MessageFns<UploadAvatarUserResponse> = {
+  encode(message: UploadAvatarUserResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UploadAvatarUserResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUploadAvatarUserResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UploadAvatarUserResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
+  },
+
+  toJSON(message: UploadAvatarUserResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UploadAvatarUserResponse>, I>>(base?: I): UploadAvatarUserResponse {
+    return UploadAvatarUserResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UploadAvatarUserResponse>, I>>(object: I): UploadAvatarUserResponse {
+    const message = createBaseUploadAvatarUserResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
 
 function createBaseGetPasswordUserRequest(): GetPasswordUserRequest {
   return { userId: 0 };
@@ -2051,19 +3411,19 @@ export interface UserService {
   FindUserByUsername(request: FindUserByUsernameRequest): Promise<FindUserByUsernameResponse>;
   FindUserByEmail(request: FindUserByEmailRequest): Promise<FindUserByEmailResponse>;
   FindUserByPhoneNumber(request: FindUserByPhoneNumberRequest): Promise<FindUserByPhoneNumberResponse>;
-  /**
-   * rpc FindUserProfile (FindUserProfileRequest) returns (FindUserProfileResponse);
-   * rpc FindUserAvatars (FindUserAvatarsRequest) returns (FindUserAvatarsResponse);
-   * rpc UpdateUserProfile (UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
-   * rpc UpdateUserPassword (UpdateUserPasswordRequest) returns (UpdateUserPasswordResponse);
-   * rpc AddAvatarToUser (AddAvatarToUserRequest) returns (AddAvatarToUserResponse);
-   * rpc DeleteAvatarUser (DeleteAvatarUserRequest) returns (DeleteAvatarUserResponse);
-   */
   AddChatToUser(request: AddChatToUserRequest): Promise<AddChatToUserResponse>;
   RemoveChatFromUser(request: RemoveChatFromUserRequest): Promise<RemoveChatFromUserResponse>;
   RemoveArrayChat(request: RemoveArrayChatRequest): Promise<RemoveArrayChatResponse>;
   RemoveAccount(request: RemoveAccountRequest): Promise<RemoveAccountResponse>;
   GetPasswordUser(request: GetPasswordUserRequest): Promise<GetPasswordUserResponse>;
+  GetUserProfile(request: GetUserProfileRequest): Promise<GetUserProfileResponse>;
+  UpdateUserProfile(request: UpdateUserProfileRequest): Promise<UpdateUserProfileResponse>;
+  UpdateUserPassword(request: UpdateUserPasswordRequest): Promise<UpdateUserPasswordResponse>;
+  ToggleUserProfileCheck(request: ToggleUserProfileCheckRequset): Promise<ToggleUserProfileCheckResponse>;
+  DeleteAvatarUser(request: DeleteAvatarUserRequest): Promise<DeleteAvatarUserResponse>;
+  FindUserAvatar(request: FindUserAvatarRequest): Promise<FindUserAvatarResponse>;
+  FindUserAvatarArray(request: FindUserAvatarArrayRequest): Promise<FindUserAvatarArrayResponse>;
+  UploadAvatarUser(request: UploadAvatarUserRequest): Promise<UploadAvatarUserResponse>;
 }
 
 export const UserServiceServiceName = "user.UserService";
@@ -2083,6 +3443,14 @@ export class UserServiceClientImpl implements UserService {
     this.RemoveArrayChat = this.RemoveArrayChat.bind(this);
     this.RemoveAccount = this.RemoveAccount.bind(this);
     this.GetPasswordUser = this.GetPasswordUser.bind(this);
+    this.GetUserProfile = this.GetUserProfile.bind(this);
+    this.UpdateUserProfile = this.UpdateUserProfile.bind(this);
+    this.UpdateUserPassword = this.UpdateUserPassword.bind(this);
+    this.ToggleUserProfileCheck = this.ToggleUserProfileCheck.bind(this);
+    this.DeleteAvatarUser = this.DeleteAvatarUser.bind(this);
+    this.FindUserAvatar = this.FindUserAvatar.bind(this);
+    this.FindUserAvatarArray = this.FindUserAvatarArray.bind(this);
+    this.UploadAvatarUser = this.UploadAvatarUser.bind(this);
   }
   CreateNewUser(request: CreateNewUserRequest): Promise<CreateNewUserResponse> {
     const data = CreateNewUserRequest.encode(request).finish();
@@ -2142,6 +3510,54 @@ export class UserServiceClientImpl implements UserService {
     const data = GetPasswordUserRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "GetPasswordUser", data);
     return promise.then((data) => GetPasswordUserResponse.decode(new BinaryReader(data)));
+  }
+
+  GetUserProfile(request: GetUserProfileRequest): Promise<GetUserProfileResponse> {
+    const data = GetUserProfileRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "GetUserProfile", data);
+    return promise.then((data) => GetUserProfileResponse.decode(new BinaryReader(data)));
+  }
+
+  UpdateUserProfile(request: UpdateUserProfileRequest): Promise<UpdateUserProfileResponse> {
+    const data = UpdateUserProfileRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "UpdateUserProfile", data);
+    return promise.then((data) => UpdateUserProfileResponse.decode(new BinaryReader(data)));
+  }
+
+  UpdateUserPassword(request: UpdateUserPasswordRequest): Promise<UpdateUserPasswordResponse> {
+    const data = UpdateUserPasswordRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "UpdateUserPassword", data);
+    return promise.then((data) => UpdateUserPasswordResponse.decode(new BinaryReader(data)));
+  }
+
+  ToggleUserProfileCheck(request: ToggleUserProfileCheckRequset): Promise<ToggleUserProfileCheckResponse> {
+    const data = ToggleUserProfileCheckRequset.encode(request).finish();
+    const promise = this.rpc.request(this.service, "ToggleUserProfileCheck", data);
+    return promise.then((data) => ToggleUserProfileCheckResponse.decode(new BinaryReader(data)));
+  }
+
+  DeleteAvatarUser(request: DeleteAvatarUserRequest): Promise<DeleteAvatarUserResponse> {
+    const data = DeleteAvatarUserRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "DeleteAvatarUser", data);
+    return promise.then((data) => DeleteAvatarUserResponse.decode(new BinaryReader(data)));
+  }
+
+  FindUserAvatar(request: FindUserAvatarRequest): Promise<FindUserAvatarResponse> {
+    const data = FindUserAvatarRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "FindUserAvatar", data);
+    return promise.then((data) => FindUserAvatarResponse.decode(new BinaryReader(data)));
+  }
+
+  FindUserAvatarArray(request: FindUserAvatarArrayRequest): Promise<FindUserAvatarArrayResponse> {
+    const data = FindUserAvatarArrayRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "FindUserAvatarArray", data);
+    return promise.then((data) => FindUserAvatarArrayResponse.decode(new BinaryReader(data)));
+  }
+
+  UploadAvatarUser(request: UploadAvatarUserRequest): Promise<UploadAvatarUserResponse> {
+    const data = UploadAvatarUserRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "UploadAvatarUser", data);
+    return promise.then((data) => UploadAvatarUserResponse.decode(new BinaryReader(data)));
   }
 }
 

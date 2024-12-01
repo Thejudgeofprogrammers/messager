@@ -25,6 +25,8 @@ import {
     GetChatByChatNameResponse,
     GetChatByIdRequest,
     GetChatByIdResponse,
+    KickUserFromChatRequest,
+    KickUserFromChatResponse,
     PermissionToAdminRequest,
     PermissionToAdminResponse,
     PermissionToMemberRequest,
@@ -36,6 +38,7 @@ import {
 } from 'src/protos/proto_gen_files/chat';
 import { Message, MessageDocument } from './schemas/Message';
 import { UpdateRoleDTO } from './dto';
+import { MessageGatewayClient } from './message.client.gateway';
 
 @Controller('ChatService')
 export class ChatService {
@@ -47,7 +50,118 @@ export class ChatService {
         private readonly chatParticipantModel: Model<ChatParticipantDocument>,
         @InjectModel(Message.name)
         private readonly messageModel: Model<MessageDocument>,
+        private readonly messageGatewayClient: MessageGatewayClient,
     ) {}
+
+    // @GrpcMethod('ChatService', 'GetTokenAndAddToChat')
+    // async GetTokenAndAddToChat(
+    //     payload: GetTokenAndAddToChatRequest,
+    // ): Promise<GetTokenAndAddToChatResponse> {
+    //     try {
+    //         if (!payload.chatId || !payload.userId) {
+    //             throw new BadRequestException('Недостаточно данных');
+    //         }
+
+    //         const { chatId, userId } = payload;
+    //     } catch (e) {
+    //         this.logger.error(
+    //             `Ошибка при создании чата: ${e.message}`,
+    //             e.stack,
+    //         );
+    //         throw new InternalServerErrorException(
+    //             'Произошла ошибка при создании чата',
+    //         );
+    //     }
+    // }
+
+    @GrpcMethod('ChatService', 'KickUserFromChat')
+    async KickUserFromChat(
+        payload: KickUserFromChatRequest,
+    ): Promise<KickUserFromChatResponse> {
+        try {
+            if (!payload.chatId && !payload.participantId && !payload.userId) {
+                throw new BadRequestException('Не вся информация передана');
+            }
+
+            const chat = await this.chatModel
+                .findById(new Types.ObjectId(payload.chatId))
+                .populate<{ participants: ChatParticipant[] }>('participants');
+
+            if (!chat) {
+                throw new NotFoundException('Чат не найден');
+            }
+
+            const user = chat.participants.find(
+                (participant) => +participant.user_id === +payload.userId,
+            );
+
+            if (!user) {
+                throw new NotFoundException('Пользователь не найден в чате');
+            }
+
+            if (!['owner', 'admin'].includes(user.role)) {
+                throw new ForbiddenException('Не хватает прав для операции');
+            }
+
+            const participantIndex = chat.participants.findIndex(
+                (participant: any) =>
+                    +participant.user_id === +payload.participantId,
+            );
+
+            if (participantIndex === -1) {
+                throw new InternalServerErrorException(
+                    'Пользователь не найден в чате',
+                );
+            }
+
+            if (user.role === 'owner') {
+                if (
+                    ['member'].includes(
+                        chat.participants[participantIndex].role,
+                    )
+                ) {
+                    chat.participants.splice(participantIndex, 1);
+                } else {
+                    throw new ForbiddenException(
+                        'Недостаточно прав для данного действия',
+                    );
+                }
+            } else {
+                if (
+                    ['member', 'admin'].includes(
+                        chat.participants[participantIndex].role,
+                    )
+                ) {
+                    chat.participants.splice(participantIndex, 1);
+                } else {
+                    throw new ForbiddenException(
+                        'Недостаточно прав для данного действия',
+                    );
+                }
+            }
+
+            await chat.save();
+
+            this.messageGatewayClient.sendMessage({
+                chatId: payload.chatId,
+                senderId: +payload.userId,
+                text: `Пользователь ${payload.participantId} был удалён пользователем ${payload.userId}`,
+            });
+
+            return {
+                message: `Пользователь успешно удалён из чата`,
+                status: 200,
+            };
+        } catch (e) {
+            this.logger.error(
+                `Ошибка при создании чата: ${e.message}`,
+                e.stack,
+            );
+            throw new InternalServerErrorException(
+                'Произошла ошибка при создании чата',
+            );
+        }
+    }
 
     @GrpcMethod('ChatService', 'CreateNewChat')
     async CreateNewChat(
@@ -55,12 +169,6 @@ export class ChatService {
     ): Promise<CreateNewChatResponse> {
         try {
             const { chatName, chatType, userId } = payload;
-            let pre;
-            if (chatName.length > 10) {
-                pre = chatName.substring(0, 10).trim() + '...';
-            } else {
-                pre = `Чат ${chatName} создан`;
-            }
 
             const chatParticipantData: ChatParticipant = {
                 user_id: userId,
@@ -70,28 +178,15 @@ export class ChatService {
             const newParticipant =
                 await this.chatParticipantModel.create(chatParticipantData);
 
-            const messageData: Message = {
-                text: `Чат ${chatName} создан`,
-                sender_id: userId,
-            };
-
-            const newMessage = await this.messageModel.create(messageData);
-
-            if (!newParticipant || !newMessage) {
+            if (!newParticipant) {
                 throw new InternalServerErrorException('Data Base exception');
             }
 
             const chatData = {
                 chatName,
                 chatType,
-                lastMessage: {
-                    message_id: newMessage._id,
-                    sender_id: userId,
-                    preview: pre,
-                },
-                description: '',
                 participants: [newParticipant._id],
-                messages: [newMessage._id],
+                messages: [],
             };
 
             const newChat = await this.chatModel.create(chatData);
@@ -99,6 +194,12 @@ export class ChatService {
             if (!newChat) {
                 throw new InternalServerErrorException('Data Base exception');
             }
+
+            this.messageGatewayClient.sendMessage({
+                chatId: newChat._id.toString(),
+                senderId: +payload.userId,
+                text: `Чат был создан пользователем ${payload.userId}`,
+            });
 
             return { chatId: newChat._id.toString() };
         } catch (e) {
@@ -208,7 +309,8 @@ export class ChatService {
 
             const chat = await this.chatModel
                 .findById(new Types.ObjectId(chatId))
-                .populate('participants');
+                .populate('participants')
+                .populate('messages');
 
             const chatParticipantArray = (chat as any).participants;
 
@@ -232,14 +334,29 @@ export class ChatService {
             if (chatType) chat.chatType = chatType;
             if (description) chat.description = description;
 
-            await chat.save();
+            if (!chatName && !chatType && !description) {
+                return {
+                    response: {
+                        message: 'Чат не изменен так как не было данных',
+                        status: 200,
+                    },
+                };
+            } else {
+                await chat.save();
 
-            return {
-                response: {
-                    message: `Чат с ID ${chatId} успешно обновлён`,
-                    status: 200,
-                },
-            };
+                this.messageGatewayClient.sendMessage({
+                    chatId,
+                    senderId: +payload.userId,
+                    text: `Чат был обновлен пользователем ${payload.userId}`,
+                });
+
+                return {
+                    response: {
+                        message: `Чат с ID ${chatId} успешно обновлён`,
+                        status: 200,
+                    },
+                };
+            }
         } catch (e) {
             this.logger.error(
                 `Ошибка при создании чата: ${e.message}`,
@@ -343,6 +460,12 @@ export class ChatService {
             chat.participants.push(newParticipant._id as Types.ObjectId);
             await chat.save();
 
+            this.messageGatewayClient.sendMessage({
+                chatId: payload.chatId,
+                senderId: +payload.participant,
+                text: `Новый пользователь: ${payload.participant}`,
+            });
+
             return {
                 response: {
                     message: 'Пользователь успешно добавлен в чат',
@@ -401,6 +524,12 @@ export class ChatService {
                 };
             }
 
+            this.messageGatewayClient.sendMessage({
+                chatId: payload.chatId,
+                senderId: +payload.userId,
+                text: `Пользователь вышел из чата ${payload.userId}`,
+            });
+
             return {
                 response: {
                     message: 'Пользователь успешно удален из чата',
@@ -434,6 +563,12 @@ export class ChatService {
                 role: 'admin',
             });
 
+            this.messageGatewayClient.sendMessage({
+                chatId: payload.chatId,
+                senderId: +payload.userId,
+                text: `Пользователь ${payload.participantId} стал admin`,
+            });
+
             return { message: 'Роль успешно изменена', status: 200 };
         } catch (e) {
             this.logger.error(
@@ -460,6 +595,12 @@ export class ChatService {
                 chatId: payload.chatId,
                 participantId: payload.participantId,
                 role: 'member',
+            });
+
+            this.messageGatewayClient.sendMessage({
+                chatId: payload.chatId,
+                senderId: +payload.userId,
+                text: `Пользователь ${payload.participantId} стал member`,
             });
 
             return { message: 'Роль успешно изменена', status: 200 };

@@ -19,6 +19,7 @@ done < <(find . -type f \( -name "*.ts" -o -name "*.proto" -o -name "*.prisma" -
     ! -path "*/dist/*" \
     ! -path "*/protos/*" \
     ! -path "*/data/*" \
+    ! -path "*/angular/*" ! -name "angular" \
     ! -path "*/data/postgres_data/*")
 
 if [ "$found" -eq 0 ]; then

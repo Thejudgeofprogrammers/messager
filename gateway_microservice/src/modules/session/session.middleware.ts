@@ -11,10 +11,13 @@ import { errMessages } from 'src/common/messages';
 import { StatusClient } from 'src/common/status';
 import { exludeRoutes } from 'src/config/exlude_route';
 import { SessionUserService } from 'src/protos/proto_gen_files/session_user';
+import { WinstonLoggerService } from '../logger/logger.service';
 
 @Injectable()
 export class SessionMiddleware implements NestMiddleware, OnModuleInit {
     private sessionUserMicroservice: SessionUserService;
+    private readonly logger: WinstonLoggerService;
+
     constructor(
         @Inject('SESSION_USER_CLIENT')
         private readonly sessionUserClient: ClientGrpc,
@@ -27,12 +30,22 @@ export class SessionMiddleware implements NestMiddleware, OnModuleInit {
     }
 
     async use(req: Request, res: Response, next: NextFunction) {
-        if (exludeRoutes.includes(req.originalUrl)) {
-            return next();
-        }
+        const { originalUrl } = req;
         const { userId, jwtToken } = req.cookies;
 
+        if (exludeRoutes.includes(originalUrl)) {
+            this.logger.debug(
+                `Route ${originalUrl} is excluded from authentication.`,
+            );
+            return next();
+        }
+
+        this.logger.debug(`Authenticating request for route: ${originalUrl}`);
+
         if (!userId || !jwtToken) {
+            this.logger.warn(
+                `Missing authentication data. UserId: ${userId}, JWT Token: ${jwtToken}`,
+            );
             return res
                 .json({
                     message: StatusClient.HTTP_STATUS_UNAUTHORIZED.message,
@@ -41,6 +54,7 @@ export class SessionMiddleware implements NestMiddleware, OnModuleInit {
         }
 
         try {
+            this.logger.debug(`Validating user session for userId: ${userId}`);
             const response = await lastValueFrom(
                 from(
                     this.sessionUserMicroservice.GetUserSession({
@@ -50,8 +64,14 @@ export class SessionMiddleware implements NestMiddleware, OnModuleInit {
             );
 
             if (response.jwtToken === jwtToken) {
+                this.logger.log(
+                    `User session validated successfully for userId: ${userId}`,
+                );
                 return next();
             } else {
+                this.logger.warn(
+                    `Invalid session for userId: ${userId}. Token mismatch.`,
+                );
                 return res
                     .json({
                         message: errMessages.use.sessionInvalid,
@@ -59,6 +79,10 @@ export class SessionMiddleware implements NestMiddleware, OnModuleInit {
                     .status(StatusClient.HTTP_STATUS_UNAUTHORIZED.status);
             }
         } catch (e) {
+            this.logger.error(
+                `Error validating session for userId: ${userId}`,
+                e.stack,
+            );
             return res
                 .json({
                     message: errMessages.use.sessionValidate,

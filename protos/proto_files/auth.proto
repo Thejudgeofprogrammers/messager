@@ -6,6 +6,15 @@ service AuthService {
     rpc Register (RegisterRequest) returns (RegisterResponse);
     rpc Login (LoginRequest) returns (LoginResponse);
     rpc CheckPassword (CheckPasswordRequest) returns (CheckPasswordResponse);
+    rpc ToHashPassword (ToHashPasswordRequest) returns (ToHashPasswordResponse);
+}
+
+message ToHashPasswordRequest {
+  string password = 1;
+}
+
+message ToHashPasswordResponse {
+  string hashedPassword = 1;
 }
 
 message CheckPasswordRequest {

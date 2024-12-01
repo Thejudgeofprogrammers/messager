@@ -24,7 +24,7 @@ const findUserByIdAxios = `
     .catch(error => console.error(error));
 `;
 
-export const findUserByIdDocs = `
+const findUserByIdDocs = `
     Выполнить запрос для поиска пользователя по ID.\n\nПример curl:\n
     ${findUserByIdCurl}\n\nПример axios:\n${findUserByIdAxios}
 `;
@@ -48,7 +48,7 @@ const findUserByPhoneAxios = `
     .catch(error => console.error(error));
 `;
 
-export const findUserByPhoneDocs = `
+const findUserByPhoneDocs = `
     Выполнить запрос для поиска пользователя по номеру телефона.\n\nПример curl:\n
     ${findUserByPhoneCurl}\n\nПример axios:\n${findUserByPhoneAxios}
 `;
@@ -72,7 +72,7 @@ const findUserByEmailAxios = `
         .catch(error => console.error(error));
 `;
 
-export const findUserByEmailDocs = `
+const findUserByEmailDocs = `
     Выполнить запрос для поиска пользователя по email.\n\nПример curl:\n
     ${findUserByEmailCurl}\n\nПример axios:\n${findUserByEmailAxios}
 `;
@@ -96,7 +96,18 @@ const findUserByUsernameAxios = `
         .catch(error => console.error(error));
 `;
 
-export const findUserByUsernameDocs = `
+const findUserByUsernameDocs = `
     Выполнить запрос для поиска пользователя по username.\n\nПример curl:\n
     ${findUserByUsernameCurl}\n\nПример axios:\n${findUserByUsernameAxios}
 `;
+
+export const userDescription = {
+    findUserByUsernameDocs,
+    findUserByEmailDocs,
+    findUserByPhoneDocs,
+    findUserByIdDocs,
+    updateUserProfile: '',
+    findUserById: '',
+    getUserProfile: '',
+    updateUserPassword: '',
+};

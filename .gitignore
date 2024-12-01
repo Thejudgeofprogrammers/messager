@@ -2,3 +2,4 @@ node_modules
 data/redis_data
 data/postgres_data
 data
+~

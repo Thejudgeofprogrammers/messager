@@ -87,6 +87,12 @@ export class CreateNewChatRequestDTO {
 }
 
 export class CreateNewChatResponseDTO {
+    message: string;
+    status: number;
+    data: CreateNewChatResponseData;
+}
+
+export class CreateNewChatResponseData {
     @ApiProperty({
         example: '6733bbd9d271a4f8cc0874ac',
         description: 'chatId - id чата',
@@ -105,6 +111,12 @@ export class GetChatByIdRequestDTO {
 }
 
 export class GetChatByIdResponseDTO {
+    message: string;
+    status: number;
+    data: GetChatByIdResponseData;
+}
+
+export class GetChatByIdResponseData {
     @ApiProperty({
         example: '6733bbd9d271a4f8cc0874ac',
         description: 'chatId - id чата',
@@ -174,6 +186,12 @@ export class GetChatByChatNameRequestDTO {
 }
 
 export class GetChatByChatNameResponseDTO {
+    message: string;
+    status: number;
+    data: GetChatByChatNameResponseData;
+}
+
+export class GetChatByChatNameResponseData {
     @ApiProperty({
         example: '6733bbd9d271a4f8cc0874ac',
         description: 'chatId - id чата',
@@ -189,14 +207,16 @@ export class GetChatByChatNameResponseDTO {
     chatName: string;
 }
 
-export class UpdateChatByIdRequestDTO {
+export class UpdateChatByIdParamsDTO {
     @ApiProperty({
         example: '6733bbd9d271a4f8cc0874ac',
         description: 'chatId - id чата',
     })
     @IsString()
     chatId: string;
+}
 
+export class UpdateChatByIdRequestDTO {
     @ApiProperty({
         example: 'yourChat',
         description: 'Имя чата',
@@ -283,7 +303,7 @@ export class RemoveUserFromChatRequestDTO {
 
     @ApiProperty({
         example: 12,
-        description: 'chatId - id чата',
+        description: 'userId - id - пользователя',
     })
     @IsNumber()
     userId: number;
@@ -296,4 +316,107 @@ export class RemoveUserFromChatResponseDTO {
     })
     @IsString()
     message: string;
+}
+
+export class PermissionToMemberResponseDTO {
+    @IsString()
+    message: string;
+
+    @IsNumber()
+    status: number;
+}
+
+export class PermissionToAdminResponseDTO {
+    @IsString()
+    message: string;
+
+    @IsNumber()
+    status: number;
+}
+
+export class PermissionToMemberRequestDTO {
+    @ApiProperty({
+        example: 12,
+        description: 'userId - id - пользователя',
+    })
+    userId: number;
+
+    @ApiProperty({
+        example: 12,
+        description: 'userId - id - пользователя',
+    })
+    @IsNumber()
+    participantId: number;
+}
+
+export class PermissionToMemberRequestParamsDTO {
+    @ApiProperty({
+        example: '6733bbd9d271a4f8cc0874ac',
+        description: 'chatId - id чата',
+    })
+    @IsString()
+    chatId: string;
+}
+
+export class PermissionToAdminRequestDTO {
+    @ApiProperty({
+        example: 12,
+        description: 'userId - id - пользователя',
+    })
+    userId: number;
+
+    @ApiProperty({
+        example: 12,
+        description: 'userId - id - пользователя',
+    })
+    @IsNumber()
+    participantId: number;
+}
+
+export class LeaveFromChatResponseDTO {
+    message: string;
+    status: number;
+}
+
+export class PermissionToAdminRequestParamsDTO {
+    @ApiProperty({
+        example: '6733bbd9d271a4f8cc0874ac',
+        description: 'chatId - id чата',
+    })
+    @IsString()
+    chatId: string;
+}
+
+export class KickUserFromChatResponseDTO {
+    @IsString()
+    message: string;
+
+    @IsNumber()
+    status: number;
+}
+
+export class KickUserFromChatRequestDTO {
+    @ApiProperty({
+        example: 12,
+        description: 'userId - id - пользователя',
+    })
+    userId: number;
+}
+
+export class KickUserFromChatParamsOneDTO {
+    @ApiProperty({
+        example: '6733bbd9d271a4f8cc0874ac',
+        description: 'chatId - id чата',
+    })
+    @IsString()
+    chatId: string;
+}
+
+export class KickUserFromChatParamsTwoDTO {
+    @ApiProperty({
+        example: 12,
+        description: 'userId - id - пользователя',
+    })
+    @IsNumber()
+    participantId: number;
 }

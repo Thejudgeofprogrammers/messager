@@ -28,7 +28,7 @@ model Profile {
   user_id         Int           @id
   description     String?       @db.Text
   created_at      DateTime      @default(now())
-  last_login      DateTime?
+  is_private      Boolean       @default(false)
   user            User          @relation(fields: [user_id], references: [user_id])
 }
 

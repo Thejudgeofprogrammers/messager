@@ -32,6 +32,12 @@ export class LoginFormDTO {
     password: string;
 }
 export class LoginResponseDTO {
+    message: string;
+    status: number;
+    data: LoginResponseData;
+}
+
+export class LoginResponseData {
     @ApiProperty({
         example: '12',
         description: 'id пользователя',
@@ -77,6 +83,12 @@ export class RegisterFormDTO {
     phoneNumber: string;
 }
 export class RegisterResponseDTO {
+    message: string;
+    status: number;
+    data: RegisterResponseDataDTO;
+}
+
+export class RegisterResponseDataDTO {
     @ApiProperty({
         example: 'username',
         description: 'Имя пользователя',
@@ -123,19 +135,32 @@ export class LogoutRequestDTO {
 }
 
 export class LogoutResponseDTO {
-    @ApiProperty({
-        example: 'Успешный выход с аккаунта',
-        description: 'Пользователь вышел с аккаунта',
-    })
-    @IsString()
     message: string;
+    status: number;
 }
 
 export class RemoveAccountRequestDTO {
+    @ApiProperty({
+        example: '1q243t2e2',
+        description: 'Пароль пользователя',
+    })
+    @IsString()
     password: string;
+
+    @ApiProperty({
+        example: 12,
+        description: 'ID пользователя',
+    })
+    @IsString()
     userId: number;
 }
 
 export class RemoveAccountResponseDTO {
     message: string;
+    status: number;
+}
+
+export class CreateNewUserResponseDTO {
+    message: string;
+    status: number;
 }

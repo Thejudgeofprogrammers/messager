@@ -1,24 +1,28 @@
-import { Body, Controller, Delete, Post, Req, Res } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Param,
+    Post,
+    Req,
+    Res,
+} from '@nestjs/common';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
-import {
-    RegisterRequest,
-    RegisterResponse,
-} from 'src/protos/proto_gen_files/auth';
+import { RegisterRequest } from 'src/protos/proto_gen_files/auth';
 import { AuthorizeService } from './authorize.service';
 import { myOptionalCookieOptions } from 'src/config/config.cookie';
 import {
     LoginFormDTO,
     LoginResponseDTO,
-    LogoutRequestDTO,
     LogoutResponseDTO,
     RegisterFormDTO,
     RegisterResponseDTO,
     RemoveAccountRequestDTO,
     RemoveAccountResponseDTO,
 } from './dto';
-import { StatusClient } from 'src/common/status';
-import { errMessages } from 'src/common/messages';
+import { promCondition, StatusClient } from 'src/common/status';
+import { errMessages, summaryData } from 'src/common/messages';
 import {
     ApiBody,
     ApiCookieAuth,
@@ -26,7 +30,7 @@ import {
     ApiResponse,
     ApiTags,
 } from '@nestjs/swagger';
-import { loginDocs, logoutDocs, RegisterDocs } from 'src/common/api/auth';
+import { authDescription } from 'src/common/api/auth';
 
 import { Response, Request } from 'express';
 
@@ -53,33 +57,38 @@ export class AuthorizeController {
 
         @InjectMetric('PROM_METRIC_AUTH_LOGOUT_DURATION')
         private readonly logoutDuration: Histogram<string>,
+
+        @InjectMetric('PROM_METRIC_AUTH_DELETE_TOTAL')
+        private readonly deleteTotal: Counter<string>,
+
+        @InjectMetric('PROM_METRIC_AUTH_DELETE_DURATION')
+        private readonly deleteDuration: Histogram<string>,
     ) {}
 
     @Post('login')
     @ApiOperation({
-        summary: 'Вход в аккаунт',
-        description: loginDocs,
+        summary: summaryData.loginUser,
+        description: authDescription.loginDocs,
     })
     @ApiCookieAuth()
     @ApiResponse({
-        status: 200,
-        description: 'Выполнен вход. Установлены куки jwtToken и userId.',
+        status: StatusClient.HTTP_STATUS_OK.status,
+        description: StatusClient.HTTP_STATUS_OK.message,
         type: LoginResponseDTO,
     })
     @ApiResponse({
-        status: 400,
-        description: 'Неправильный запрос',
+        status: StatusClient.HTTP_STATUS_BAD_REQUEST.status,
+        description: StatusClient.HTTP_STATUS_BAD_REQUEST.message,
     })
     @ApiResponse({
-        status: 401,
-        description: 'Не авторизован',
+        status: StatusClient.HTTP_STATUS_UNAUTHORIZED.status,
+        description: StatusClient.HTTP_STATUS_UNAUTHORIZED.message,
     })
     @ApiResponse({
-        status: 500,
-        description: 'Ошибка сервера',
+        status: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+        description: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
     })
     @ApiBody({
-        description: 'Данные для входа',
         type: LoginFormDTO,
     })
     async loginUser(
@@ -88,14 +97,48 @@ export class AuthorizeController {
     ): Promise<Response<LoginResponseDTO>> {
         const end = this.loginDuration.startTimer();
         try {
-            const data = await this.authorizeService.loginUser(payload);
-            const { userId, jwtToken } = data;
+            const { email, password, phoneNumber } = payload;
+            if (
+                (!email && !phoneNumber) ||
+                !password ||
+                (email && phoneNumber)
+            ) {
+                this.loginTotal.inc({ result: promCondition.failure });
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_BAD_REQUEST,
+                    })
+                    .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
+            }
+
+            const { userId, jwtToken } =
+                await this.authorizeService.loginUser(payload);
+
+            if (!userId || !jwtToken) {
+                this.loginTotal.inc({ result: promCondition.failure });
+                return res
+                    .json({
+                        message:
+                            StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR
+                                .message,
+                    })
+                    .status(
+                        StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+                    );
+            }
+
             res.cookie('jwtToken', jwtToken, myOptionalCookieOptions);
             res.cookie('userId', userId.toString(), myOptionalCookieOptions);
 
-            this.loginTotal.inc();
-            return res.json({ userId, jwtToken });
+            this.loginTotal.inc({ result: promCondition.success });
+            return res
+                .json({
+                    data: { userId, jwtToken },
+                    message: StatusClient.HTTP_STATUS_OK.message,
+                })
+                .status(StatusClient.HTTP_STATUS_OK.status);
         } catch (e) {
+            this.loginTotal.inc({ result: promCondition.failure });
             return res
                 .json({
                     message: errMessages.login,
@@ -109,38 +152,66 @@ export class AuthorizeController {
 
     @Post('register')
     @ApiOperation({
-        summary: 'Регистрация нового пользователя',
-        description: RegisterDocs,
+        summary: summaryData.registerUser,
+        description: authDescription.registerDocs,
     })
     @ApiResponse({
-        status: 200,
-        description: 'Пользователь зарегистрирован',
+        status: StatusClient.HTTP_STATUS_CREATED.status,
+        description: StatusClient.HTTP_STATUS_CREATED.message,
         type: RegisterResponseDTO,
     })
     @ApiResponse({
-        status: 400,
-        description: 'Неправильный запрос',
+        status: StatusClient.HTTP_STATUS_BAD_REQUEST.status,
+        description: StatusClient.HTTP_STATUS_BAD_REQUEST.message,
     })
     @ApiResponse({
-        status: 500,
-        description: 'Ошибка сервера',
+        status: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+        description: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
     })
     @ApiBody({
-        description: 'Данные для входа',
         type: RegisterFormDTO,
     })
     async registerUser(
         @Body() payload: RegisterRequest,
         @Res() res: Response,
-    ): Promise<Response<RegisterResponse>> {
+    ): Promise<Response<RegisterResponseDTO>> {
         const end = this.registerDuration.startTimer();
         try {
-            const {
-                info: { message, status },
-            } = await this.authorizeService.registerUser(payload);
-            this.registerTotal.inc();
-            return res.json(message).status(status);
+            const { username, password, email, phoneNumber } = payload;
+            if (!username || !password || !email || !phoneNumber) {
+                this.registerTotal.inc({ result: promCondition.failure });
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_BAD_REQUEST,
+                    })
+                    .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
+            }
+
+            const { message: data, status } =
+                await this.authorizeService.registerUser(payload);
+
+            if (!data || !status) {
+                this.registerTotal.inc({ result: promCondition.failure });
+                return res
+                    .json({
+                        message:
+                            StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR
+                                .message,
+                    })
+                    .status(
+                        StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+                    );
+            }
+
+            this.registerTotal.inc({ result: promCondition.success });
+            return res
+                .json({
+                    message: StatusClient.HTTP_STATUS_CREATED.message,
+                    data,
+                })
+                .status(status);
         } catch (e) {
+            this.registerTotal.inc({ result: promCondition.failure });
             return res
                 .json({ message: errMessages.registry, error: e.message })
                 .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
@@ -151,24 +222,23 @@ export class AuthorizeController {
 
     @Delete('delete')
     @ApiOperation({
-        summary: 'Удаление аккаунта',
-        description: 'Удаление аккаунта',
+        summary: summaryData.deleteUser,
+        description: authDescription.removeDocs,
     })
     @ApiResponse({
-        status: 200,
-        description: 'Пользователь вышел с аккаунта',
+        status: StatusClient.HTTP_STATUS_OK.status,
+        description: StatusClient.HTTP_STATUS_OK.message,
         type: RemoveAccountResponseDTO,
     })
     @ApiResponse({
-        status: 400,
-        description: 'Неправильный запрос',
+        status: StatusClient.HTTP_STATUS_BAD_REQUEST.status,
+        description: StatusClient.HTTP_STATUS_BAD_REQUEST.message,
     })
     @ApiResponse({
-        status: 500,
-        description: 'Ошибка сервера',
+        status: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+        description: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
     })
     @ApiBody({
-        description: 'Данные для выхода',
         type: RemoveAccountRequestDTO,
     })
     async DeleteUser(
@@ -176,62 +246,110 @@ export class AuthorizeController {
         @Res() res: Response,
         @Req() req: Request,
     ): Promise<Response<RemoveAccountResponseDTO>> {
+        const end = this.deleteDuration.startTimer();
         try {
-            const userId: number = +req.cookies['userId'];
-            const payload = { userId, password };
-            const data = await this.authorizeService.DeleteUser(payload);
-            if (!data) {
-                return res.json({ message: 'Ошибка' });
+            const userId = +req.cookies.userId;
+            if (!password || !userId) {
+                this.deleteTotal.inc({ result: promCondition.failure });
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_BAD_REQUEST,
+                    })
+                    .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
             }
-            return res.json({ message: data.message });
+
+            const payload: RemoveAccountRequestDTO = { userId, password };
+
+            const { message } = await this.authorizeService.DeleteUser(payload);
+            if (!message) {
+                this.deleteTotal.inc({ result: promCondition.failure });
+                return res
+                    .json({
+                        message:
+                            StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR
+                                .message,
+                    })
+                    .status(
+                        StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+                    );
+            }
+
+            this.deleteTotal.inc({ result: promCondition.success });
+            return res
+                .json({ message })
+                .status(StatusClient.HTTP_STATUS_OK.status);
         } catch (e) {
+            this.deleteTotal.inc({ result: promCondition.failure });
             return res
                 .json({
                     message: errMessages.delUser,
                     error: e.message,
                 })
                 .status(StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status);
+        } finally {
+            end();
         }
     }
 
     @Post('logout')
     @ApiOperation({
-        summary: 'Выход с аккаунта',
-        description: logoutDocs,
+        summary: summaryData.logoutUser,
+        description: authDescription.logoutDocs,
     })
     @ApiResponse({
-        status: 200,
-        description: 'Пользователь вышел с аккаунта',
+        status: StatusClient.HTTP_STATUS_OK.status,
+        description: StatusClient.HTTP_STATUS_OK.message,
         type: LogoutResponseDTO,
     })
     @ApiResponse({
-        status: 400,
-        description: 'Неправильный запрос',
+        status: StatusClient.HTTP_STATUS_BAD_REQUEST.status,
+        description: StatusClient.HTTP_STATUS_BAD_REQUEST.message,
     })
     @ApiResponse({
-        status: 500,
-        description: 'Ошибка сервера',
-    })
-    @ApiBody({
-        description: 'Данные для выхода',
-        type: LogoutRequestDTO,
+        status: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+        description: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
     })
     async logoutUser(
-        @Body() payload: LogoutRequestDTO,
+        @Param('userId') userId: number,
+        @Param('jwtToken') jwtToken: string,
         @Res() res: Response,
     ): Promise<Response<LogoutResponseDTO>> {
         const end = this.logoutDuration.startTimer();
         try {
-            const data = await this.authorizeService.logoutUser(
-                payload.userId,
-                payload.jwtToken,
-            );
-            const { message, status } = data;
+            if (!userId || !jwtToken) {
+                this.logoutTotal.inc({ result: promCondition.failure });
+                return res
+                    .json({
+                        message: StatusClient.HTTP_STATUS_BAD_REQUEST,
+                    })
+                    .status(StatusClient.HTTP_STATUS_BAD_REQUEST.status);
+            }
+
+            const { message, status } = await this.authorizeService.logoutUser({
+                userId,
+                jwtToken,
+            });
+
+            if (!message || !status) {
+                this.logoutTotal.inc({ result: promCondition.failure });
+                return res
+                    .json({
+                        message:
+                            StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR
+                                .message,
+                    })
+                    .status(
+                        StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+                    );
+            }
+
             res.clearCookie('jwtToken');
             res.clearCookie('userId');
-            this.logoutTotal.inc();
-            return res.json(message).status(status);
+
+            this.logoutTotal.inc({ result: promCondition.success });
+            return res.json({ message }).status(status);
         } catch (e) {
+            this.logoutTotal.inc({ result: promCondition.failure });
             return res
                 .json({
                     message: errMessages.logout,

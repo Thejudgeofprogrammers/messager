@@ -52,19 +52,20 @@ services:
     networks:
       - mynetwork
 
-  # message_microservice:
-  #   container_name: message_microservice
-  #   build:
-  #     context: ../message_microservice
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "50055:50055"
-  #   depends_on:
-  #     - chat_microservice
-  #     - mongodb
-  #   env_file: ../message_microservice/.env
-  #   networks:
-  #     - mynetwork
+  message_microservice:
+    container_name: message_microservice
+    build:
+      context: ../message_microservice
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+      - "81:81"
+    depends_on:
+      - chat_microservice
+      - mongodb
+    env_file: ../message_microservice/.env
+    networks:
+      - mynetwork
 
   gateway_microservice:
     container_name: gateway_microservice
@@ -136,6 +137,26 @@ services:
     networks:
       - mynetwork
 
+  cassandra:
+    container_name: cassandra
+    image: cassandra:latest
+    environment:
+      - CASSANDRA_CLUSTER_NAME=mycluster  # Имя кластера
+      - CASSANDRA_LISTENER_HTTP_PORT=8080  # Порт для HTTP-интерфейса (если нужно)
+      - CASSANDRA_DC=dc1  # Имя дата-центра
+      - CASSANDRA_RACK=rack1  # Имя стояка
+    ports:
+      - "9042:9042"  # Порт Cassandra для CQL (по умолчанию)
+      - "7000:7000"  # Порт для передачи данных между нодами (в кластере)
+      - "7001:7001"  # Порт для защищенной передачи данных
+      - "7199:7199"  # Порт для JMX (мониторинг)
+    networks:
+      - mynetwork
+    restart: always
+    volumes:
+      - cassandra-data:/var/lib/cassandra  # Монтирование для сохранения данных
+    command: ["cassandra", "-f"]
+
   postgres_exporter:
     container_name: postgres_exporter
     image: wrouesnel/postgres_exporter:latest
@@ -160,28 +181,79 @@ services:
       - mynetwork
     restart: always
 
-  # prometheus:
-  #   image: prom/prometheus
-  #   container_name: prometheus
-  #   ports:
-  #     - "9090:9090"
-  #   volumes:
-  #     - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-  #   depends_on:
-  #     - grafana
+  redis_exporter:
+    container_name: redis_exporter
+    image: oliver006/redis_exporter:latest
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    networks:
+      - mynetwork
+    restart: always
 
-  # grafana:
-  #   image: grafana/grafana
-  #   container_name: grafana
+  cassandra_exporter:
+    container_name: cassandra_exporter
+    image: aurelijus/cassandra-exporter:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=mycluster
+      - CASSANDRA_HOST=cassandra
+      - CASSANDRA_PORT=9042
+    depends_on:
+      - cassandra
+    networks:
+      - mynetwork
+    restart: always
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+
+
+  # notification_microservice 9017:9017
+
+  # jmx_exporter:
+  #   image: bitnami/jmx-exporter:latest
+  #   container_name: jmx_exporter
   #   ports:
-  #     - "4050:3000"
+  #     - "8080:8080"
+  #   volumes:
+  #     - ./kafka_jmx_config.yml:/config.yml  # Конфигурация метрик JMX Exporter
+  #   environment:
+  #     - JAVA_OPTS=-javaagent:/opt/jmx_prometheus_javaagent.jar=8080:/config.yml
   #   depends_on:
-  #     - user_microservice
-  #     - auth_microservice
-  #     - gateway_microservice
-  #     - session_microservice
-  #   env_file:
-  #     - ../config/grafana.env
+  #     - kafka
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - grafana
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "4050:3000"
+    depends_on:
+      - user_microservice
+      - auth_microservice
+      - gateway_microservice
+      - session_microservice
+    env_file:
+      - ../config/grafana.env
 
 networks:
   mynetwork:

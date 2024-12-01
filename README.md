@@ -1,24 +1,37 @@
-chmod +x .
-npx prisma migrate dev --name init - внутри контейнера user_microservice
+# Telegram
 
-Connection Prometheus server URL * http://prometheus:9090
+## Команды для запуска
+- chmod +x .
+- npm run dev:build
 
-https://supabase.com/
+**Под команды для бд**
+- docker exec -it user_microservice sh
+- npx prisma migrate dev --name init - внутри контейнера user_microservice
 
-metadata call grpc method
+## Monitoring
+- Connection Prometheus server URL * http://prometheus:9090
 
-#7109AA	#5F2580	#48036F	#9F3ED5	#AD66D5
+## Задачи:
 
-Задачи:
+### Aws Or yandex.cloud
+- add method for upload avatar to chat  (true)
+- add method for upload avatar for user (true)
 
-update chat выводит сообщение о том что чат обновлен, то есть новое сообщение
 
-метод для admin прав 
-метод понижения прав до member
+- реализовать метод отправки приглашений в чат
 
-avatar chat
-avatar user
+### Websocket
+- реализовать пойск chat и user по маске имени
+- При каждом действии с чатом будь то удаление пользователя выход пользователь и тд. Создавалось новое сообщение в чате
 
-method kickuser только при admin или owner
+### Monitoring
+- Настроить prometheus && graphana
 
-метод приглашения пользователя
+- добавить дату рождения
+
+добавить роуты crud Для аватара чата
+
+
+- Переместить логику сохранения файла в content_microservice из user_microservice
+- Настроисть cassandra
+- Настроить ELK

@@ -10,6 +10,27 @@ import { Timestamp } from "./google/protobuf/timestamp";
 
 export const protobufPackage = "chat";
 
+export interface GetTokenAndAddToChatRequest {
+  userId: number;
+  chatId: string;
+}
+
+export interface GetTokenAndAddToChatResponse {
+  message: string;
+  status: number;
+}
+
+export interface KickUserFromChatRequest {
+  userId: number;
+  participantId: number;
+  chatId: string;
+}
+
+export interface KickUserFromChatResponse {
+  message: string;
+  status: number;
+}
+
 export interface PermissionToMemberRequest {
   userId: number;
   chatId: string;
@@ -170,6 +191,326 @@ export interface GenericResponse {
   message: string;
   status: number;
 }
+
+function createBaseGetTokenAndAddToChatRequest(): GetTokenAndAddToChatRequest {
+  return { userId: 0, chatId: "" };
+}
+
+export const GetTokenAndAddToChatRequest: MessageFns<GetTokenAndAddToChatRequest> = {
+  encode(message: GetTokenAndAddToChatRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.chatId !== "") {
+      writer.uint32(18).string(message.chatId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetTokenAndAddToChatRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetTokenAndAddToChatRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.chatId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetTokenAndAddToChatRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      chatId: isSet(object.chatId) ? globalThis.String(object.chatId) : "",
+    };
+  },
+
+  toJSON(message: GetTokenAndAddToChatRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.chatId !== "") {
+      obj.chatId = message.chatId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetTokenAndAddToChatRequest>, I>>(base?: I): GetTokenAndAddToChatRequest {
+    return GetTokenAndAddToChatRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetTokenAndAddToChatRequest>, I>>(object: I): GetTokenAndAddToChatRequest {
+    const message = createBaseGetTokenAndAddToChatRequest();
+    message.userId = object.userId ?? 0;
+    message.chatId = object.chatId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetTokenAndAddToChatResponse(): GetTokenAndAddToChatResponse {
+  return { message: "", status: 0 };
+}
+
+export const GetTokenAndAddToChatResponse: MessageFns<GetTokenAndAddToChatResponse> = {
+  encode(message: GetTokenAndAddToChatResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetTokenAndAddToChatResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetTokenAndAddToChatResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetTokenAndAddToChatResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
+  },
+
+  toJSON(message: GetTokenAndAddToChatResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetTokenAndAddToChatResponse>, I>>(base?: I): GetTokenAndAddToChatResponse {
+    return GetTokenAndAddToChatResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetTokenAndAddToChatResponse>, I>>(object: I): GetTokenAndAddToChatResponse {
+    const message = createBaseGetTokenAndAddToChatResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
+
+function createBaseKickUserFromChatRequest(): KickUserFromChatRequest {
+  return { userId: 0, participantId: 0, chatId: "" };
+}
+
+export const KickUserFromChatRequest: MessageFns<KickUserFromChatRequest> = {
+  encode(message: KickUserFromChatRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0) {
+      writer.uint32(8).int32(message.userId);
+    }
+    if (message.participantId !== 0) {
+      writer.uint32(16).int32(message.participantId);
+    }
+    if (message.chatId !== "") {
+      writer.uint32(26).string(message.chatId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): KickUserFromChatRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseKickUserFromChatRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.participantId = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.chatId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): KickUserFromChatRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      participantId: isSet(object.participantId) ? globalThis.Number(object.participantId) : 0,
+      chatId: isSet(object.chatId) ? globalThis.String(object.chatId) : "",
+    };
+  },
+
+  toJSON(message: KickUserFromChatRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
+    }
+    if (message.participantId !== 0) {
+      obj.participantId = Math.round(message.participantId);
+    }
+    if (message.chatId !== "") {
+      obj.chatId = message.chatId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<KickUserFromChatRequest>, I>>(base?: I): KickUserFromChatRequest {
+    return KickUserFromChatRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<KickUserFromChatRequest>, I>>(object: I): KickUserFromChatRequest {
+    const message = createBaseKickUserFromChatRequest();
+    message.userId = object.userId ?? 0;
+    message.participantId = object.participantId ?? 0;
+    message.chatId = object.chatId ?? "";
+    return message;
+  },
+};
+
+function createBaseKickUserFromChatResponse(): KickUserFromChatResponse {
+  return { message: "", status: 0 };
+}
+
+export const KickUserFromChatResponse: MessageFns<KickUserFromChatResponse> = {
+  encode(message: KickUserFromChatResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): KickUserFromChatResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseKickUserFromChatResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): KickUserFromChatResponse {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+    };
+  },
+
+  toJSON(message: KickUserFromChatResponse): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<KickUserFromChatResponse>, I>>(base?: I): KickUserFromChatResponse {
+    return KickUserFromChatResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<KickUserFromChatResponse>, I>>(object: I): KickUserFromChatResponse {
+    const message = createBaseKickUserFromChatResponse();
+    message.message = object.message ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
 
 function createBasePermissionToMemberRequest(): PermissionToMemberRequest {
   return { userId: 0, chatId: "", participantId: 0 };
@@ -2645,11 +2986,13 @@ export interface ChatService {
   UpdateChatById(request: UpdateChatByIdRequest): Promise<UpdateChatByIdResponse>;
   DeleteChatById(request: DeleteChatByIdRequest): Promise<DeleteChatByIdResponse>;
   AddUserToChat(request: AddUserToChatRequest): Promise<AddUserToChatResponse>;
-  RemoveUserFromChat(request: RemoveUserFromChatRequest): Promise<RemoveUserFromChatResponse>;
   LoadToChat(request: LoadToChatRequest): Promise<LoadToChatResponse>;
   LeaveFromChat(request: LeaveFromChatRequest): Promise<LeaveFromChatResponse>;
   PermissionToAdmin(request: PermissionToAdminRequest): Promise<PermissionToAdminResponse>;
   PermissionToMember(request: PermissionToMemberRequest): Promise<PermissionToMemberResponse>;
+  RemoveUserFromChat(request: RemoveUserFromChatRequest): Promise<RemoveUserFromChatResponse>;
+  KickUserFromChat(request: KickUserFromChatRequest): Promise<KickUserFromChatResponse>;
+  GetTokenAndAddToChat(request: GetTokenAndAddToChatRequest): Promise<GetTokenAndAddToChatResponse>;
 }
 
 export const ChatServiceServiceName = "chat.ChatService";
@@ -2665,11 +3008,13 @@ export class ChatServiceClientImpl implements ChatService {
     this.UpdateChatById = this.UpdateChatById.bind(this);
     this.DeleteChatById = this.DeleteChatById.bind(this);
     this.AddUserToChat = this.AddUserToChat.bind(this);
-    this.RemoveUserFromChat = this.RemoveUserFromChat.bind(this);
     this.LoadToChat = this.LoadToChat.bind(this);
     this.LeaveFromChat = this.LeaveFromChat.bind(this);
     this.PermissionToAdmin = this.PermissionToAdmin.bind(this);
     this.PermissionToMember = this.PermissionToMember.bind(this);
+    this.RemoveUserFromChat = this.RemoveUserFromChat.bind(this);
+    this.KickUserFromChat = this.KickUserFromChat.bind(this);
+    this.GetTokenAndAddToChat = this.GetTokenAndAddToChat.bind(this);
   }
   CreateNewChat(request: CreateNewChatRequest): Promise<CreateNewChatResponse> {
     const data = CreateNewChatRequest.encode(request).finish();
@@ -2707,12 +3052,6 @@ export class ChatServiceClientImpl implements ChatService {
     return promise.then((data) => AddUserToChatResponse.decode(new BinaryReader(data)));
   }
 
-  RemoveUserFromChat(request: RemoveUserFromChatRequest): Promise<RemoveUserFromChatResponse> {
-    const data = RemoveUserFromChatRequest.encode(request).finish();
-    const promise = this.rpc.request(this.service, "RemoveUserFromChat", data);
-    return promise.then((data) => RemoveUserFromChatResponse.decode(new BinaryReader(data)));
-  }
-
   LoadToChat(request: LoadToChatRequest): Promise<LoadToChatResponse> {
     const data = LoadToChatRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "LoadToChat", data);
@@ -2735,6 +3074,24 @@ export class ChatServiceClientImpl implements ChatService {
     const data = PermissionToMemberRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "PermissionToMember", data);
     return promise.then((data) => PermissionToMemberResponse.decode(new BinaryReader(data)));
+  }
+
+  RemoveUserFromChat(request: RemoveUserFromChatRequest): Promise<RemoveUserFromChatResponse> {
+    const data = RemoveUserFromChatRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "RemoveUserFromChat", data);
+    return promise.then((data) => RemoveUserFromChatResponse.decode(new BinaryReader(data)));
+  }
+
+  KickUserFromChat(request: KickUserFromChatRequest): Promise<KickUserFromChatResponse> {
+    const data = KickUserFromChatRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "KickUserFromChat", data);
+    return promise.then((data) => KickUserFromChatResponse.decode(new BinaryReader(data)));
+  }
+
+  GetTokenAndAddToChat(request: GetTokenAndAddToChatRequest): Promise<GetTokenAndAddToChatResponse> {
+    const data = GetTokenAndAddToChatRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "GetTokenAndAddToChat", data);
+    return promise.then((data) => GetTokenAndAddToChatResponse.decode(new BinaryReader(data)));
   }
 }
 

@@ -23,10 +23,14 @@ import {
     GetChatByChatNameResponse,
     GetChatByIdRequest,
     GetChatByIdResponse,
+    GetTokenAndAddToChatRequest,
+    GetTokenAndAddToChatResponse,
+    KickUserFromChatRequest,
+    KickUserFromChatResponse,
     LeaveFromChatRequest,
-    LeaveFromChatResponse,
     LoadToChatRequest,
-    LoadToChatResponse,
+    PermissionToMemberRequest,
+    PermissionToMemberResponse,
     RemoveUserFromChatRequest,
     RemoveUserFromChatResponse,
     UpdateChatByIdRequest,
@@ -44,10 +48,14 @@ import {
     RemoveArrayChatResponse,
     UserService as UserServiceClient,
 } from 'src/protos/proto_gen_files/user';
-import { DeleteChatByIdResponseDTO } from './dto';
+import { DeleteChatByIdResponseDTO, LeaveFromChatResponseDTO } from './dto';
+import { WinstonLoggerService } from '../logger/logger.service';
+import { LoadToChatResponseDTO } from '../user/dto';
 
 @Injectable()
 export class ChatService implements OnModuleInit {
+    private readonly logger: WinstonLoggerService;
+
     @Client(grpcClientOptionsChat)
     private readonly chatClient: ClientGrpc;
     @Client(grpcClientOptionsUser)
@@ -65,40 +73,294 @@ export class ChatService implements OnModuleInit {
             this.userClient.getService<UserServiceClient>('UserService');
     }
 
-    async LoadToChat(payload: LoadToChatRequest): Promise<LoadToChatResponse> {
+    async GetTokenAndAddToChat(
+        payload: GetTokenAndAddToChatRequest,
+    ): Promise<GetTokenAndAddToChatResponse> {
         try {
-            if (!payload) {
+            const { chatId, userId } = payload;
+
+            this.logger.debug(
+                'Start process to get token and add user to chat',
+            );
+
+            if (!chatId || !userId) {
+                this.logger.warn('Missing chatId or userId in request payload');
+                throw new BadRequestException(
+                    'untransmitted chatId or userId',
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
+
+            this.logger.debug(
+                `Sending request to chat microservice for chatId: ${chatId}, userId: ${userId}`,
+            );
+            const { message, status } = await lastValueFrom(
+                from(
+                    this.chatMicroservice.GetTokenAndAddToChat({
+                        chatId,
+                        userId,
+                    }),
+                ),
+            );
+
+            if (!message || !status) {
+                this.logger.error('Failed to get token or add user to chat');
+                throw new InternalServerErrorException(
+                    StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+                );
+            }
+
+            this.logger.log(
+                `User successfully added to chat with chatId: ${chatId}`,
+            );
+            return { message, status };
+        } catch (e) {
+            this.logger.error(
+                'Error during process to get token and add to chat',
+                e.stack,
+            );
+
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.getTokenAndAddToChat,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
+        }
+    }
+
+    async KickUserFromChat(
+        payload: KickUserFromChatRequest,
+    ): Promise<KickUserFromChatResponse> {
+        try {
+            const { chatId, participantId, userId } = payload;
+
+            this.logger.debug('Start process to kick user from chat');
+
+            if (!chatId || !participantId || !userId) {
+                this.logger.warn(
+                    'Missing chatId, participantId or userId in request payload',
+                );
                 throw new BadRequestException(
                     StatusClient.HTTP_STATUS_BAD_REQUEST.message,
                 );
             }
-            const userAdd = await this.userService.AddChatToUser({
-                userId: +payload.userId,
-                chatId: payload.chatId,
-            });
 
-            if (userAdd.info.status !== 200) {
-                throw new InternalServerErrorException('Exception on userAdd');
-            }
-
-            const chatAdd = await lastValueFrom(
+            this.logger.debug(
+                `Sending request to chat microservice to kick user with participantId: ${participantId}, chatId: ${chatId}, userId: ${userId}`,
+            );
+            const { message, status } = await lastValueFrom(
                 from(
-                    this.chatMicroservice.AddUserToChat({
-                        participant: {
-                            userId: payload.userId,
-                            role: 'member',
-                        },
-                        chatId: payload.chatId,
+                    this.chatMicroservice.KickUserFromChat({
+                        participantId,
+                        chatId,
+                        userId,
                     }),
                 ),
             );
-            const response = {
-                message: chatAdd.response.message,
-                status: 200,
-            };
 
-            return { response };
+            if (!message || !status) {
+                this.logger.error('Failed to kick user from chat');
+                throw new InternalServerErrorException(
+                    StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+                );
+            }
+
+            this.logger.log(
+                `User successfully kicked from chat with chatId: ${chatId}`,
+            );
+            return { message, status };
         } catch (e) {
+            this.logger.error(
+                'Error during process to kick user from chat',
+                e.stack,
+            );
+
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.kickUserFromChat,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
+        }
+    }
+
+    async PermissionToAdmin(
+        payload: PermissionToMemberRequest,
+    ): Promise<PermissionToMemberResponse> {
+        try {
+            const { chatId, participantId, userId } = payload;
+
+            this.logger.debug('Start process to grant admin permission');
+
+            if (!chatId || !participantId || !userId) {
+                this.logger.warn(
+                    'Missing chatId, participantId or userId in request payload',
+                );
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
+            }
+
+            this.logger.debug(
+                `Sending request to chat microservice to grant admin permission for participantId: ${participantId}, chatId: ${chatId}, userId: ${userId}`,
+            );
+            const { message, status } = await lastValueFrom(
+                from(
+                    this.chatMicroservice.PermissionToAdmin({
+                        participantId,
+                        chatId,
+                        userId,
+                    }),
+                ),
+            );
+
+            if (!message || !status) {
+                this.logger.error('Failed to grant admin permission');
+                throw new InternalServerErrorException(
+                    StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+                );
+            }
+
+            this.logger.log(
+                `Admin permission successfully granted for user with userId: ${userId}`,
+            );
+            return { message, status };
+        } catch (e) {
+            this.logger.error(
+                'Error during process to grant admin permission',
+                e.stack,
+            );
+
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.permissionToAdmin,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
+        }
+    }
+
+    async PermissionToMember(
+        payload: PermissionToMemberRequest,
+    ): Promise<PermissionToMemberResponse> {
+        try {
+            const { participantId, chatId, userId } = payload;
+            this.logger.debug(
+                `Sending request to chat microservice to grant permission to member with participantId: ${participantId}, chatId: ${chatId}, userId: ${userId}`,
+            );
+
+            const { message, status } = await lastValueFrom(
+                from(
+                    this.chatMicroservice.PermissionToMember({
+                        participantId,
+                        chatId,
+                        userId,
+                    }),
+                ),
+            );
+
+            if (!message || !status) {
+                this.logger.warn('Failed to switch permission for member');
+                throw new InternalServerErrorException(
+                    StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+                );
+            }
+
+            this.logger.log('Permission successfully granted to member');
+            return {
+                message,
+                status,
+            };
+        } catch (e) {
+            this.logger.error(
+                'Error while granting permission to member',
+                e.stack,
+            );
+
+            if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
+                throw new RpcException({
+                    message: StatusClient.RPC_EXCEPTION.message,
+                    code: e.code,
+                });
+            }
+
+            throw new RpcException({
+                message: errMessages.permissionToMember,
+                code: StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.status,
+            });
+        }
+    }
+
+    async LoadToChat(
+        payload: LoadToChatRequest,
+    ): Promise<LoadToChatResponseDTO> {
+        try {
+            const { userId, chatId } = payload;
+            this.logger.debug(
+                `Attempting to add user to chat with userId: ${userId}, chatId: ${chatId}`,
+            );
+
+            const { status: statusCode } = await this.userService.AddChatToUser(
+                {
+                    userId,
+                    chatId,
+                },
+            );
+
+            if (statusCode !== 200) {
+                this.logger.error('Error while adding user to chat');
+                throw new InternalServerErrorException(
+                    StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+                );
+            }
+
+            this.logger.debug(
+                'User added to user service successfully, now adding to chat',
+            );
+
+            const {
+                response: { message, status },
+            } = await lastValueFrom(
+                from(
+                    this.chatMicroservice.AddUserToChat({
+                        participant: {
+                            userId,
+                            role: 'member',
+                        },
+                        chatId,
+                    }),
+                ),
+            );
+
+            if (!message || !status) {
+                this.logger.warn('Failed to add user to chat');
+                throw new InternalServerErrorException(
+                    StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+                );
+            }
+
+            this.logger.log('User successfully added to chat');
+
+            return { message, status };
+        } catch (e) {
+            this.logger.error('Error while loading user to chat', e.stack);
+
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
                     message: StatusClient.RPC_EXCEPTION.message,
@@ -115,24 +377,33 @@ export class ChatService implements OnModuleInit {
 
     async LeaveFromChat(
         payload: LeaveFromChatRequest,
-    ): Promise<LeaveFromChatResponse> {
+    ): Promise<LeaveFromChatResponseDTO> {
         try {
-            if (!payload) {
-                throw new BadRequestException(
-                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+            const { userId, chatId } = payload;
+            this.logger.debug(
+                `Attempting to remove user from chat with userId: ${userId}, chatId: ${chatId}`,
+            );
+
+            const { status: statusCode } =
+                await this.userService.RemoveChatFromUser({
+                    userId,
+                    chatId,
+                });
+
+            if (statusCode !== 200) {
+                this.logger.error('Error while removing user from chat');
+                throw new InternalServerErrorException(
+                    StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
                 );
             }
 
-            const userAdd = await this.userService.RemoveChatFromUser({
-                userId: +payload.userId,
-                chatId: payload.chatId,
-            });
+            this.logger.debug(
+                'User successfully removed from user service, now removing from chat',
+            );
 
-            if (userAdd.info.status !== 200) {
-                throw new InternalServerErrorException('Exception on userAdd');
-            }
-
-            const chatAdd = await lastValueFrom(
+            const {
+                response: { message, status },
+            } = await lastValueFrom(
                 from(
                     this.chatMicroservice.RemoveUserFromChat({
                         userId: +payload.userId,
@@ -141,17 +412,19 @@ export class ChatService implements OnModuleInit {
                 ),
             );
 
-            if (!chatAdd.response) {
-                throw new InternalServerErrorException('Ошибка сервера');
+            if (!message || !status) {
+                this.logger.error('Error while removing user from chat');
+                throw new InternalServerErrorException(
+                    StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+                );
             }
 
-            const response = {
-                message: chatAdd.response.message,
-                status: 200,
-            };
+            this.logger.log('User successfully removed from chat');
 
-            return { response };
+            return { message, status };
         } catch (e) {
+            this.logger.error('Error while leaving chat', e.stack);
+
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
                     message: StatusClient.RPC_EXCEPTION.message,
@@ -166,44 +439,57 @@ export class ChatService implements OnModuleInit {
         }
     }
 
+    ////////////////////////////////////////////////
+
     async CreateNewChat(
         payload: CreateNewChatRequest,
     ): Promise<CreateNewChatResponse> {
         try {
-            if (!payload) {
-                throw new BadRequestException(
-                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
-                );
-            }
-            const chatInfo = await lastValueFrom(
+            const { chatName, chatType, userId } = payload;
+            this.logger.debug(
+                `Attempting to create a new chat with name: ${chatName}, type: ${chatType}`,
+            );
+
+            const { chatId } = await lastValueFrom(
                 from(
                     this.chatMicroservice.CreateNewChat({
-                        chatName: payload.chatName,
-                        chatType: payload.chatType,
-                        userId: payload.userId,
+                        chatName,
+                        chatType,
+                        userId,
                     }),
                 ),
             );
 
-            if (!chatInfo) {
+            if (!chatId) {
+                this.logger.error(
+                    'Unable to create chat, possible data conflict',
+                );
                 throw new ConflictException(
-                    'Unable to create chat, possible data conflict.',
+                    StatusClient.HTTP_STATUS_CONFLICT.message,
                 );
             }
 
-            const addChat = await this.userService.AddChatToUser({
-                userId: payload.userId,
-                chatId: chatInfo.chatId,
+            this.logger.debug(
+                'Chat created successfully, now adding chat to user',
+            );
+
+            const { message, status } = await this.userService.AddChatToUser({
+                userId,
+                chatId,
             });
 
-            if (!addChat) {
+            if (!message || !status) {
+                this.logger.error('Error while adding chat to user');
                 throw new InternalServerErrorException(
-                    'Ошибка добавления чата пользователю',
+                    StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
                 );
             }
 
-            return chatInfo;
+            this.logger.log('Chat successfully created and added to user');
+            return { chatId };
         } catch (e) {
+            this.logger.error('Error while creating new chat', e.stack);
+
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
                     message: StatusClient.RPC_EXCEPTION.message,
@@ -222,24 +508,33 @@ export class ChatService implements OnModuleInit {
         payload: GetChatByIdRequest,
     ): Promise<GetChatByIdResponse> {
         try {
-            if (!payload) {
-                throw new BadRequestException(
-                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
-                );
-            }
-            const validChatId = payload.toString();
-            const chatInfo = await lastValueFrom(
+            const { chatId } = payload;
+            this.logger.debug(
+                `Fetching chat information for chatId: ${payload}`,
+            );
+
+            const { chatData } = await lastValueFrom(
                 from(
                     this.chatMicroservice.GetChatById({
-                        chatId: validChatId,
+                        chatId,
                     }),
                 ),
             );
-            if (!chatInfo) {
-                throw new NotFoundException(errMessages.notFound.chat);
+
+            if (!chatData) {
+                this.logger.warn(`Chat with ID ${chatId} not found`);
+                throw new NotFoundException(
+                    StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                );
             }
-            return chatInfo;
+
+            this.logger.log(
+                `Successfully retrieved chat information for chatId: ${chatId}`,
+            );
+            return { chatData };
         } catch (e) {
+            this.logger.error('Error while retrieving chat by ID', e.stack);
+
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
                     message: StatusClient.RPC_EXCEPTION.message,
@@ -258,25 +553,33 @@ export class ChatService implements OnModuleInit {
         payload: GetChatByChatNameRequest,
     ): Promise<GetChatByChatNameResponse> {
         try {
-            if (!payload) {
-                throw new BadRequestException(
-                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
-                );
-            }
-            const chatInfo = await lastValueFrom(
+            const { chatName } = payload;
+            this.logger.debug(
+                `Fetching chat information for chatName: ${chatName}`,
+            );
+
+            const { chatData } = await lastValueFrom(
                 from(
                     this.chatMicroservice.GetChatByChatName({
-                        chatName: payload.toString(),
+                        chatName,
                     }),
                 ),
             );
 
-            if (!chatInfo) {
-                throw new NotFoundException(errMessages.notFound.chat);
+            if (!chatData) {
+                this.logger.warn(`Chat with name ${chatName} not found`);
+                throw new NotFoundException(
+                    StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                );
             }
 
-            return chatInfo;
+            this.logger.log(
+                `Successfully retrieved chat information for chatName: ${chatName}`,
+            );
+            return { chatData };
         } catch (e) {
+            this.logger.error('Error while retrieving chat by name', e.stack);
+
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
                     message: StatusClient.RPC_EXCEPTION.message,
@@ -295,11 +598,9 @@ export class ChatService implements OnModuleInit {
         payload: UpdateChatByIdRequest,
     ): Promise<UpdateChatByIdResponse> {
         try {
-            if (!payload) {
-                throw new BadRequestException(
-                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
-                );
-            }
+            const { chatId, chatName, chatType, userId, description } = payload;
+            this.logger.debug(`Updating chat with ID: ${payload.chatId}`);
+
             let chatInfo;
             if (
                 payload.chatType === 'private' ||
@@ -308,11 +609,11 @@ export class ChatService implements OnModuleInit {
                 chatInfo = await lastValueFrom(
                     from(
                         this.chatMicroservice.UpdateChatById({
-                            chatId: payload.chatId.toString(),
-                            userId: +payload.userId,
-                            chatName: payload.chatName.toString(),
-                            chatType: payload.chatType.toString(),
-                            description: payload.description.toString(),
+                            chatId,
+                            userId,
+                            chatName,
+                            chatType,
+                            description,
                         }),
                     ),
                 );
@@ -323,23 +624,36 @@ export class ChatService implements OnModuleInit {
                 chatInfo = await lastValueFrom(
                     from(
                         this.chatMicroservice.UpdateChatById({
-                            chatId: payload.chatId.toString(),
-                            userId: +payload.userId,
-                            chatName: payload.chatName.toString(),
-                            description: payload.description.toString(),
+                            chatId,
+                            userId,
+                            chatName,
+                            description,
                         }),
                     ),
                 );
             } else {
-                throw new BadRequestException('private or group');
+                this.logger.warn(
+                    'Invalid chat type, expected "private" or "group"',
+                );
+                throw new BadRequestException(
+                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
+                );
             }
 
             if (!chatInfo) {
-                throw new NotFoundException(errMessages.notFound.chat);
+                this.logger.warn(`Chat with ID ${chatId} not found`);
+                throw new NotFoundException(
+                    StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                );
             }
 
+            this.logger.log(
+                `Successfully updated chat with ID: ${payload.chatId}`,
+            );
             return chatInfo;
         } catch (e) {
+            this.logger.error('Error while updating chat by ID', e.stack);
+
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
                     message: StatusClient.RPC_EXCEPTION.message,
@@ -358,43 +672,56 @@ export class ChatService implements OnModuleInit {
         payload: DeleteChatByIdRequest,
     ): Promise<DeleteChatByIdResponseDTO> {
         try {
-            if (!payload) {
+            const { chatId, userId } = payload;
+            this.logger.debug(`Attempting to delete chat with ID: ${chatId}`);
+
+            const chatInfoData: DeleteChatByIdRequest = {
+                chatId,
+                userId,
+            };
+
+            if (!chatInfoData.chatId || isNaN(userId)) {
+                this.logger.warn('Invalid or missing userId in cookies');
                 throw new BadRequestException(
                     StatusClient.HTTP_STATUS_BAD_REQUEST.message,
                 );
             }
 
-            const chatInfoData: DeleteChatByIdRequest = {
-                chatId: payload.chatId,
-                userId: +payload.userId,
-            };
+            this.logger.debug(
+                `Fetching chat information for deletion with chatId: ${chatId}`,
+            );
 
-            if (!chatInfoData.chatId || isNaN(payload.userId)) {
-                throw new BadRequestException(
-                    'Invalid or missing userId in cookies',
-                );
-            }
-
-            const chatInfo: DeleteChatByIdResponse = await lastValueFrom(
+            const {
+                info: { data },
+            }: DeleteChatByIdResponse = await lastValueFrom(
                 from(this.chatMicroservice.DeleteChatById(chatInfoData)),
             );
 
-            if (!chatInfo) {
-                throw new NotFoundException(errMessages.notFound.chat);
+            if (!data) {
+                this.logger.warn(`Chat with ID ${chatId} not found`);
+                throw new NotFoundException(
+                    StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                );
             }
 
-            const arrayUsers: ArrayLinkUsers[] = chatInfo.info.data.map(
-                (userId: number) => ({
-                    userId,
-                }),
+            this.logger.debug(
+                `Successfully fetched chat info for deletion, preparing to remove users from chat`,
             );
 
+            const arrayUsers: ArrayLinkUsers[] = data.map((userId: number) => ({
+                userId,
+            }));
+
             const chatParticipantDelData: RemoveArrayChatRequest = {
-                chatId: payload.chatId,
+                chatId,
                 data: arrayUsers,
             };
 
-            const chatParticipantDel: RemoveArrayChatResponse =
+            this.logger.debug(
+                `Removing chat references for users with chatId: ${chatId}`,
+            );
+
+            const { message, status }: RemoveArrayChatResponse =
                 await lastValueFrom(
                     from(
                         this.userMicroservice.RemoveArrayChat(
@@ -403,26 +730,27 @@ export class ChatService implements OnModuleInit {
                     ),
                 );
 
-            if (chatParticipantDel.status !== 200) {
+            if (status !== 200) {
+                this.logger.error('Failed to remove chat references for users');
                 throw new InternalServerErrorException(
-                    'Failed to remove chat references for users',
+                    StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
                 );
             }
 
-            const msg = {
-                message: chatParticipantDel.message.toString(),
-            };
+            this.logger.log(
+                `Chat with ID ${chatId} successfully deleted and users removed`,
+            );
 
-            return msg;
+            return { message };
         } catch (e) {
+            this.logger.error(`Error in DeleteChatById: ${e.message}`, e.stack);
+
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
                     message: StatusClient.RPC_EXCEPTION.message,
                     code: e.code,
                 });
             }
-
-            console.error('Error in DeleteChatById:', e.message, e.stack);
 
             throw new RpcException({
                 message: errMessages.deleteChatById,
@@ -435,26 +763,40 @@ export class ChatService implements OnModuleInit {
         payload: AddUserToChatRequest,
     ): Promise<AddUserToChatResponse> {
         try {
-            if (!payload) {
-                throw new BadRequestException(
-                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
-                );
-            }
+            const { chatId, participant } = payload;
+            this.logger.debug(
+                `Attempting to add user to chat with chatId: ${chatId} and participant: ${JSON.stringify(participant)}`,
+            );
+
             const chatInfo = await lastValueFrom(
                 from(
                     this.chatMicroservice.AddUserToChat({
-                        chatId: payload.chatId,
-                        participant: payload.participant,
+                        chatId,
+                        participant,
                     }),
                 ),
             );
 
             if (!chatInfo) {
-                throw new NotFoundException(errMessages.notFound.chat);
+                this.logger.warn(
+                    `Chat with ID ${chatId} not found or unable to add user`,
+                );
+                throw new NotFoundException(
+                    StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                );
             }
+
+            this.logger.log(
+                `User successfully added to chat with chatId: ${chatId}`,
+            );
 
             return chatInfo;
         } catch (e) {
+            this.logger.error(
+                `Error while adding user to chat: ${e.message}`,
+                e.stack,
+            );
+
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
                     message: StatusClient.RPC_EXCEPTION.message,
@@ -473,26 +815,40 @@ export class ChatService implements OnModuleInit {
         payload: RemoveUserFromChatRequest,
     ): Promise<RemoveUserFromChatResponse> {
         try {
-            if (!payload) {
-                throw new BadRequestException(
-                    StatusClient.HTTP_STATUS_BAD_REQUEST.message,
-                );
-            }
+            const { userId, chatId } = payload;
+            this.logger.debug(
+                `Attempting to remove user with userId: ${userId} from chat with chatId: ${chatId}`,
+            );
+
             const chatInfo = await lastValueFrom(
                 from(
                     this.chatMicroservice.RemoveUserFromChat({
-                        chatId: payload.chatId,
-                        userId: payload.userId,
+                        chatId,
+                        userId,
                     }),
                 ),
             );
 
             if (!chatInfo) {
-                throw new NotFoundException(errMessages.notFound.chat);
+                this.logger.warn(
+                    `Chat with ID ${chatId} not found or unable to remove user`,
+                );
+                throw new NotFoundException(
+                    StatusClient.HTTP_STATUS_NOT_FOUND.message,
+                );
             }
+
+            this.logger.log(
+                `User with userId: ${userId} successfully removed from chat with chatId: ${chatId}`,
+            );
 
             return chatInfo;
         } catch (e) {
+            this.logger.error(
+                `Error while removing user from chat: ${e.message}`,
+                e.stack,
+            );
+
             if (e.code === 'UNAVAILABLE' || e.message.includes('connect')) {
                 throw new RpcException({
                     message: StatusClient.RPC_EXCEPTION.message,
