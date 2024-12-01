@@ -18,6 +18,17 @@ service ChatService {
     rpc PermissionToMember(PermissionToMemberRequest) returns (PermissionToMemberResponse);
     rpc RemoveUserFromChat(RemoveUserFromChatRequest) returns (RemoveUserFromChatResponse);
     rpc KickUserFromChat(KickUserFromChatRequest) returns (KickUserFromChatResponse);
+    rpc GetTokenAndAddToChat(GetTokenAndAddToChatRequest) returns (GetTokenAndAddToChatResponse);
+}
+
+message GetTokenAndAddToChatRequest {
+    int32 user_id = 1;
+    string chat_id = 2;
+}
+
+message GetTokenAndAddToChatResponse {
+    string message = 1;
+    int32 status = 2;
 }
 
 message KickUserFromChatRequest {

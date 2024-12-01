@@ -1,6 +1,6 @@
 import {
-    BadRequestException,
     Controller,
+    ForbiddenException,
     InternalServerErrorException,
     NotFoundException,
 } from '@nestjs/common';
@@ -28,6 +28,22 @@ import {
     RemoveAccountResponse,
     GetPasswordUserRequest,
     GetPasswordUserResponse,
+    GetUserProfileRequest,
+    GetUserProfileResponse,
+    UpdateUserPasswordRequest,
+    UpdateUserPasswordResponse,
+    UpdateUserProfileRequest,
+    UpdateUserProfileResponse,
+    DeleteAvatarUserRequest,
+    DeleteAvatarUserResponse,
+    FindUserAvatarRequest,
+    FindUserAvatarResponse,
+    FindUserAvatarArrayRequest,
+    FindUserAvatarArrayResponse,
+    UploadAvatarUserRequest,
+    UploadAvatarUserResponse,
+    ToggleUserProfileCheckRequset,
+    ToggleUserProfileCheckResponse,
 } from '../../protos/proto_gen_files/user';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
@@ -48,13 +64,277 @@ export class UserService implements UserInterfase {
         private readonly findUserDuration: Histogram<string>,
     ) {}
 
+    @GrpcMethod('UserService', 'ToggleUserProfileCheck')
+    async ToggleUserProfileCheck(
+        payload: ToggleUserProfileCheckRequset,
+    ): Promise<ToggleUserProfileCheckResponse> {
+        try {
+            const { toggle } = payload;
+            if (!toggle) {
+                throw new InternalServerErrorException(
+                    'Не вся информация получена',
+                );
+            }
+
+            const toggleUserProfileCheck =
+                await this.prismaService.toggleUserProfileCheck({
+                    toggle,
+                });
+
+            return { success: toggleUserProfileCheck.success };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+            );
+        }
+    }
+
+    @GrpcMethod('UserService', 'UploadAvatarUser')
+    async UploadAvatarUser(
+        request: UploadAvatarUserRequest,
+    ): Promise<UploadAvatarUserResponse> {
+        try {
+            const { avatarUrl, userId } = request;
+            if (avatarUrl || !userId) {
+                throw new InternalServerErrorException(
+                    'Ошибка отправки данных',
+                );
+            }
+
+            const uploadAvatarUser = await this.prismaService.uploadAvatarUser({
+                avatarUrl,
+                userId,
+            });
+
+            if (!uploadAvatarUser) {
+                throw new InternalServerErrorException('Ошибка базы данных');
+            }
+
+            return {
+                message: uploadAvatarUser.message,
+                status: uploadAvatarUser.status,
+            };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+            );
+        }
+    }
+
+    @GrpcMethod('UserService', 'FindUserAvatarArray')
+    async FindUserAvatarArray(
+        request: FindUserAvatarArrayRequest,
+    ): Promise<FindUserAvatarArrayResponse> {
+        try {
+            const { userId } = request;
+            if (!request.userId) {
+                throw new InternalServerErrorException(
+                    'Ошибка отправки данных',
+                );
+            }
+
+            const findUserAvatarArray =
+                await this.prismaService.findUserAvatarArray({
+                    userId,
+                });
+
+            if (!findUserAvatarArray) {
+                throw new InternalServerErrorException('Ошибка базы данных');
+            }
+
+            return {
+                message: findUserAvatarArray.message,
+                status: findUserAvatarArray.status,
+            };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+            );
+        }
+    }
+
+    @GrpcMethod('UserService', 'FindUserAvatar')
+    async FindUserAvatar(
+        request: FindUserAvatarRequest,
+    ): Promise<FindUserAvatarResponse> {
+        try {
+            const { avatarId, userId } = request;
+
+            if (!avatarId || !userId) {
+                throw new InternalServerErrorException(
+                    'Ошибка отправки данных',
+                );
+            }
+
+            const findUserAvatar = await this.prismaService.findUserAvatar({
+                avatarId,
+                userId,
+            });
+
+            if (!findUserAvatar) {
+                throw new NotFoundException('Аватар не найден');
+            }
+
+            return {
+                message: findUserAvatar.avatarUrl,
+                status: findUserAvatar.status,
+            };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+            );
+        }
+    }
+
+    @GrpcMethod('UserService', 'DeleteAvatarUser')
+    async DeleteAvatarUser(
+        request: DeleteAvatarUserRequest,
+    ): Promise<DeleteAvatarUserResponse> {
+        try {
+            const { userId, avatarId } = request;
+            if (!userId || !avatarId) {
+                throw new InternalServerErrorException(
+                    'Не вся информация получена',
+                );
+            }
+
+            const deleteAvatarUser = await this.prismaService.deleteAvatarUser({
+                userId,
+                avatarId,
+            });
+
+            if (!deleteAvatarUser) {
+                throw new InternalServerErrorException('Ошибка базы данных');
+            }
+
+            return {
+                message: deleteAvatarUser.message,
+                status: deleteAvatarUser.status,
+            };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+            );
+        }
+    }
+
+    @GrpcMethod('UserService', 'UpdateUserProfile')
+    async UpdateUserProfile(
+        request: UpdateUserProfileRequest,
+    ): Promise<UpdateUserProfileResponse> {
+        try {
+            const { userId, description } = request;
+
+            if (!userId || !description) {
+                throw new InternalServerErrorException(
+                    'Ошибка при передаче данных',
+                );
+            }
+
+            const updateDataUser = await this.prismaService.updateUserProfile({
+                userId,
+                description,
+            });
+
+            if (!updateDataUser) {
+                throw new InternalServerErrorException(
+                    'Ошибка сохранения изменения профиля',
+                );
+            }
+
+            return {
+                message: updateDataUser.message,
+                status: updateDataUser.status,
+            };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+            );
+        }
+    }
+
+    @GrpcMethod('UserService', 'GetUserProfile')
+    async GetUserProfile(
+        request: GetUserProfileRequest,
+    ): Promise<GetUserProfileResponse> {
+        try {
+            const { userId, whoFind } = request;
+
+            if (!userId) {
+                throw new InternalServerErrorException(
+                    'Ошибка при передаче данных',
+                );
+            }
+
+            const getDataUser = await this.prismaService.getUserProfile({
+                userId,
+            });
+
+            if (!getDataUser) {
+                throw new NotFoundException('Профиль пользователя не найден');
+            }
+
+            if (
+                getDataUser.message.user_id !== whoFind ||
+                getDataUser.message.is_private === true
+            ) {
+                throw new ForbiddenException('Ресурс не доступен');
+            }
+
+            return {
+                message: getDataUser.message.description,
+                status: getDataUser.status,
+            };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+            );
+        }
+    }
+
+    @GrpcMethod('UserService', 'UpdateUserPassword')
+    async UpdateUserPassword(
+        payload: UpdateUserPasswordRequest,
+    ): Promise<UpdateUserPasswordResponse> {
+        try {
+            const { userId, password } = payload;
+            if (!password || !userId) {
+                throw new InternalServerErrorException(
+                    'Ошибка при передаче данных',
+                );
+            }
+
+            const toHashPassword = await this.prismaService.updateUserPassword({
+                userId,
+                password,
+            });
+
+            if (!toHashPassword) {
+                throw new InternalServerErrorException(
+                    'Ошибка сервера при сохранении нового пароля',
+                );
+            }
+
+            return {
+                message: toHashPassword.message,
+                status: toHashPassword.status,
+            };
+        } catch (e) {
+            throw new InternalServerErrorException(
+                StatusClient.HTTP_STATUS_INTERNAL_SERVER_ERROR.message,
+            );
+        }
+    }
+
     @GrpcMethod('UserService', 'GetPasswordUser')
     async GetPasswordUser(
         payload: GetPasswordUserRequest,
     ): Promise<GetPasswordUserResponse> {
         try {
             if (!payload.userId) {
-                throw new BadRequestException('payload without');
+                throw new InternalServerErrorException(
+                    'Не вся информация получена',
+                );
             }
 
             const existUser = await this.prismaService.findUserById(
@@ -79,7 +359,9 @@ export class UserService implements UserInterfase {
     ): Promise<RemoveAccountResponse> {
         try {
             if (!request.userId) {
-                throw new BadRequestException('Не получена информация');
+                throw new InternalServerErrorException(
+                    'Не получена информация',
+                );
             }
 
             const { userId } = request;
@@ -108,7 +390,9 @@ export class UserService implements UserInterfase {
     ): Promise<RemoveArrayChatResponse> {
         try {
             if (!request.chatId || !request.data) {
-                throw new BadRequestException('chatId or UserArray notFound!');
+                throw new InternalServerErrorException(
+                    'chatId or UserArray notFound!',
+                );
             }
             const { chatId, data: userIds } = request;
             for (const { userId } of userIds) {
@@ -148,7 +432,7 @@ export class UserService implements UserInterfase {
     ): Promise<AddChatToUserResponse> {
         try {
             if (!payload.userId || !payload.chatId) {
-                throw new BadRequestException(
+                throw new InternalServerErrorException(
                     StatusClient.HTTP_STATUS_BAD_REQUEST.message,
                 );
             }
@@ -288,7 +572,6 @@ export class UserService implements UserInterfase {
         const end = this.findUserDuration.startTimer();
         try {
             const { userId } = request;
-            console.log(userId);
             const existUser = await this.prismaService.findUserById(userId);
 
             if (!existUser) {

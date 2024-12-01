@@ -31,11 +31,6 @@ const descriptionApiLogoutAxios = `
     );
 `;
 
-export const logoutDocs = `
-    Выполнить запрос для выхода пользователя с аккаунта.\n\nПример curl:\n
-    ${descriptionApiLogoutCurl}\n\nПример axios:\n${descriptionApiLogoutAxios}
-`;
-
 const descriptionApiLoginCurl = `
     curl -X POST http://${host}:${port}/api/auth/login \
         -H "Content-Type: application/json" \
@@ -61,11 +56,6 @@ const descriptionApiLoginAxios = `
             withCredentials: true, // Для поддержки куки
         }
     );
-`;
-
-export const loginDocs = `
-    Выполнить запрос для входа пользователя в аккаунт.\n\nПример curl:\n
-    ${descriptionApiLoginCurl}\n\nПример axios:\n${descriptionApiLoginAxios}
 `;
 
 const descriptionApiRegisterCurl = `
@@ -96,7 +86,53 @@ const descriptionApiRegisterAxios = `
     );
 `;
 
-export const RegisterDocs = `
-    Выполнить запрос для создания аккаунта.\n\nПример curl:\n
-    ${descriptionApiRegisterCurl}\n\nПример axios:\n${descriptionApiRegisterAxios}
+const descriptionApiDeleteCurl = `
+    curl -X DELETE http://${host}:${port}/api/auth/delete \
+    -H "Content-Type: application/json" \
+    -H "Cookie: userId=12" \
+    -d '{
+        "password": "yourPassword123"
+    }'
 `;
+
+const descriptionApiDeleteAxios = `
+    await axios.delete(
+        'http://${host}:${port}/api/auth/delete',
+        {
+            data: {
+                password: 'yourPassword123',
+            },
+            headers: {
+                'Content-Type': 'application/json',
+                Cookie: 'userId=12',
+            },
+        }
+    );
+`;
+
+const logoutDocs = `
+    Выполнить запрос для выхода пользователя с аккаунта.\n\nПример curl:\n
+    ${descriptionApiLogoutCurl}\n\nПример axios:\n${descriptionApiLogoutAxios}
+`;
+
+const loginDocs = `
+    Выполнить запрос для входа пользователя в аккаунт.\n\nПример curl:\n
+    ${descriptionApiLoginCurl}\n\nПример axios:\n${descriptionApiLoginAxios}
+`;
+
+const registerDocs = `
+        Выполнить запрос для создания аккаунта.\n\nПример curl:\n
+        ${descriptionApiRegisterCurl}\n\nПример axios:\n${descriptionApiRegisterAxios}
+`;
+
+const removeDocs = `
+    Выполнить запрос для удаления аккаунта.\n\nПример curl:\n
+    ${descriptionApiDeleteCurl}\n\nПример axios:\n${descriptionApiDeleteAxios}
+`;
+
+export const authDescription = {
+    logoutDocs,
+    loginDocs,
+    registerDocs,
+    removeDocs,
+};

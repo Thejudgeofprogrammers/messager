@@ -11,6 +11,12 @@ export class FindUserByIdRequestDTO {
 }
 
 export class FindUserByIdResponseDTO {
+    message: string;
+    status: number;
+    data: FindUserByIdResponseData;
+}
+
+export class FindUserByIdResponseData {
     @ApiProperty({
         example: 12,
         description: 'id пользователя',
@@ -63,6 +69,12 @@ export class FindUserByPhoneNumberRequestDTO {
 }
 
 export class FindUserByPhoneNumberResponseDTO {
+    message: string;
+    status: number;
+    data: FindUserByPhoneNumberResponseData;
+}
+
+export class FindUserByPhoneNumberResponseData {
     @ApiProperty({
         example: 12,
         description: 'id пользователя',
@@ -108,7 +120,22 @@ export class FindUserByEmailRequestDTO {
     email: string;
 }
 
+export class FindUserByusernameRequestDTO {
+    @ApiProperty({
+        example: 'lilwiggha',
+        description: 'username пользователя',
+    })
+    @IsString()
+    username: string;
+}
+
 export class FindUserByEmailResponseDTO {
+    message: string;
+    status: number;
+    data: FindUserByEmailResponseData;
+}
+
+export class FindUserByEmailResponseData {
     @ApiProperty({
         example: 12,
         description: 'id пользователя',
@@ -154,11 +181,32 @@ export class FindUserByUsernameRequestDTO {
 }
 
 export class FindUserByUsernameResponseDTO {
+    message: string;
+    status: number;
+    data: FindUserByUsernameResponseData;
+}
+
+export class FindUserByUsernameResponseData {
     @ApiProperty({
         example: [{ userId: 12, username: 'lilwiggha' }],
         description: 'Массив пользователей',
     })
     userData: UserArray[];
+}
+
+export class AddChatToUserResponseDTO {
+    message: string;
+    status: number;
+}
+
+export class LoadToChatResponseDTO {
+    message: string;
+    status: number;
+}
+
+export class RemoveChatFromUserResponseDTO {
+    message: string;
+    status: number;
 }
 
 export class UserArray {
@@ -175,4 +223,46 @@ export class UserArray {
     })
     @IsString()
     username: string;
+}
+
+export class UpdateUserProfileResponseDTO {
+    @IsString()
+    message: string;
+
+    @IsNumber()
+    status: number;
+}
+
+export class UpdateUserProfileRequestDTO {
+    @IsNumber()
+    userId: number;
+
+    @IsString()
+    description: string;
+}
+
+export class GetUserProfileResponseDTO {
+    @IsNumber()
+    message: string;
+
+    @IsString()
+    status: number;
+}
+
+export class GetUserProfileRequestDTO {
+    @IsNumber()
+    userId: number;
+}
+
+export class UpdateUserPasswordRequestDTO {
+    userId: number;
+    password: string;
+}
+
+export class UpdateUserPasswordResponseDTO {
+    @IsNumber()
+    message: string;
+
+    @IsString()
+    status: number;
 }
