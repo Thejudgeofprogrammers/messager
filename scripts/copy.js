@@ -6,7 +6,8 @@ const microservices = [
     '../user_microservice',
     '../auth_microservice',
     '../gateway_microservice',
-    '../chat_microservice'
+    '../chat_microservice',
+    '../content_microservice'
 ];
 
 const sourceDir = path.join(__dirname, '../protos');
