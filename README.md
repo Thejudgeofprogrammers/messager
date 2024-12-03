@@ -35,3 +35,12 @@
 - Переместить логику сохранения файла в content_microservice из user_microservice
 - Настроисть cassandra
 - Настроить ELK
+
+model Avatar {
+  avatar_id       Int           @id @default(autoincrement())
+  user_id         Int
+  avatar_url      String        @db.Text
+  is_active       Boolean       @default(false)
+  uploaded_at     DateTime      @default(now())
+  is_random       Boolean       @default(false)
+}

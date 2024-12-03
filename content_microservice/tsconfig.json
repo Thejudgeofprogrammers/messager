@@ -17,5 +17,11 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.spec.ts",
+    "test/app.e2e-spec.ts"
+  ],
+  "exclude": ["node_modules"]
 }

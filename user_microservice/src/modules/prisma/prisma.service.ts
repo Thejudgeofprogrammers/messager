@@ -7,24 +7,12 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaClient, User } from '@prisma/client';
 import {
     CreateNewUserRequest,
-    DeleteAvatarUserResponse,
-    FindUserAvatarArrayRequest,
-    FindUserAvatarArrayResponse,
-    FindUserAvatarRequest,
-    ToggleUserProfileCheckRequset,
-    ToggleUserProfileCheckResponse,
     UpdateUserPasswordRequest,
     UpdateUserPasswordResponse,
     UpdateUserProfileRequest,
     UpdateUserProfileResponse,
-    UploadAvatarUserRequest,
-    UploadAvatarUserResponse,
 } from '../../protos/proto_gen_files/user';
-import {
-    FindProfileDTO,
-    FindUserAvatarDTOResponse,
-    GetUserProfileDTOResponse,
-} from './dto';
+import { FindProfileDTO, GetUserProfileDTOResponse } from './dto';
 
 @Injectable()
 export class PrismaService extends PrismaClient {
@@ -32,77 +20,15 @@ export class PrismaService extends PrismaClient {
         super();
     }
 
-    async toggleUserProfileCheck(
-        payload: ToggleUserProfileCheckRequset,
-    ): Promise<ToggleUserProfileCheckResponse> {
-        try {
-            
-        } catch (e) {
-            console.error('Error creating user:', e);
-            throw new InternalServerErrorException('Unable to update user');
-        }
-    }
-
-    async uploadAvatarUser(
-        request: UploadAvatarUserRequest,
-    ): Promise<UploadAvatarUserResponse> {
-        try {
-            
-        } catch (e) {
-            console.error('Error creating user:', e);
-            throw new InternalServerErrorException('Unable to update user');
-        }
-    }
-
-    async findUserAvatarArray(
-        request: FindUserAvatarArrayRequest,
-    ): Promise<FindUserAvatarArrayResponse> {
-        try {
-            
-        } catch (e) {
-            console.error('Error creating user:', e);
-            throw new InternalServerErrorException('Unable to update user');
-        }
-    }
-
-    async deleteAvatarUser(
-        request: DeleteAvatarUserReques,
-    ): Promise<DeleteAvatarUserResponse> {
-        try {
-            
-        } catch (e) {
-            console.error('Error creating user:', e);
-            throw new InternalServerErrorException('Unable to update user');
-        }
-    }
-
-    async findUserAvatar(
-        request: FindUserAvatarRequest,
-    ): Promise<FindUserAvatarDTOResponse> {
-        try {
-            const { userId, avatarId } = request;
-
-            const userWithAvatars = await this.user.findUnique({
-                where: { user_id: userId },
-                include: { avatars: true },
-            });
-
-            const foundAvatar = userWithAvatars.avatars.find(
-                (avatar) => avatar.avatar_id === avatarId,
-            );
-
-            if (!foundAvatar) {
-                throw new NotFoundException(
-                    'Аватар с таким ID не найден у пользователя',
-                );
-            }
-
-            return { avatarUrl: foundAvatar.avatar_url, status: 200 };
-        } catch (e) {
-            console.error('Error creating user:', e);
-            throw new InternalServerErrorException('Unable to update user');
-        }
-    }
+    // async toggleUserProfileCheck(
+    //     payload: ToggleUserProfileCheckRequset,
+    // ): Promise<ToggleUserProfileCheckResponse> {
+    //     try {
+    //     } catch (e) {
+    //         console.error('Error creating user:', e);
+    //         throw new InternalServerErrorException('Unable to update user');
+    //     }
+    // }
 
     async getUserProfile(
         request: GetUserProfileDTOResponse,
